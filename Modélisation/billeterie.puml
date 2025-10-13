@@ -1,0 +1,56 @@
+@startuml
+'=====================
+' Entités principales
+'=====================
+entity Client {
+  +id_client : INT
+  +nom : VARCHAR
+  +prenom : VARCHAR
+  +email : VARCHAR
+}
+
+entity Billet {
+  +id_billet : INT
+  +id_client : INT
+  +id_evenement : INT
+  +id_categorie : INT
+  +id_paiement : INT
+  +prix : DECIMAL
+}
+
+entity Evenement {
+  +id_evenement : INT
+  +nom : VARCHAR
+  +date : DATE
+  +id_lieu : INT
+}
+
+entity Lieu {
+  +id_lieu : INT
+  +nom : VARCHAR
+  +ville : VARCHAR
+}
+
+entity Paiement {
+  +id_paiement : INT
+  +montant : DECIMAL
+  +date_paiement : DATE
+  +mode : VARCHAR
+}
+
+entity CategorieBillet {
+  +id_categorie : INT
+  +nom : VARCHAR
+  +prix_sup : DECIMAL
+}
+
+'=====================
+' Relations avec cardinalités
+'=====================
+Client "1" ||--o "0..*" Billet : achète
+Evenement "1" ||--o "0..*" Billet : concerne
+Evenement "1" ||--o "1" Lieu : se déroule
+Billet "0..*" ||--o "1" Paiement : payé par
+Billet "1" ||--o "1" CategorieBillet : a pour catégorie
+@enduml
+
