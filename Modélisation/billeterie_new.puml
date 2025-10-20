@@ -1,0 +1,43 @@
+@startuml
+title Diagramme de classes - Billeterie
+
+entity Client {
+  +id_client : INT
+  +nom : VARCHAR
+  +prenom : VARCHAR
+  +email : VARCHAR
+}
+
+entity Billet {
+  +id_billet : INT
+  +id_client : INT
+  +id_evenement : INT
+  +id_categorie : INT
+  +prix : DECIMAL
+}
+
+entity Evenement {
+  +id_evenement : INT
+  +nom : VARCHAR
+  +date : DATE
+  +id_lieu : INT
+}
+
+entity Lieu {
+  +id_lieu : INT
+  +nom : VARCHAR
+  +ville : VARCHAR
+}
+
+entity CategorieBillet {
+  +id_categorie : INT
+  +nom : VARCHAR
+  +prix_sup : DECIMAL
+}
+
+Client "1" ||--o "0..*" Billet : achète
+Evenement "1" ||--o "0..*" Billet : concerne
+Lieu "1" ||--o "0..*" Evenement : accueille
+CategorieBillet "1" ||--o "0..*" Billet : correspond à
+
+@enduml

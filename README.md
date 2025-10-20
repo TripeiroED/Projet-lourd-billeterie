@@ -8,4 +8,3 @@ L'application permet de gérer des clients, événements, lieux, billets et paie
 Le projet utilise :
 - Java 17+
 - MySQL
-
