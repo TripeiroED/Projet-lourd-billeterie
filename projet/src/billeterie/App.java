@@ -41,9 +41,17 @@ public class App extends Application {
 
     public void showLoginScreen() {
         LoginScreen loginScreen = new LoginScreen(this);
-        Scene scene = new Scene(loginScreen.getView(), 300, 200);
+        Scene scene = new Scene(loginScreen.getView(), 400, 450);
+
+        // Charge uniquement le CSS du login ici
+        scene.getStylesheets().add(getClass().getResource("/resources/login.css").toExternalForm());
+
         primaryStage.setTitle("Connexion Billetterie");
         primaryStage.setScene(scene);
+        
+        // Centre la fenêtre à l'écran
+        primaryStage.centerOnScreen();
+        
         primaryStage.show();
     }
 
@@ -52,6 +60,10 @@ public class App extends Application {
         Scene scene = new Scene(registerScreen.getView(), 300, 300);
         primaryStage.setTitle("Inscription Billetterie");
         primaryStage.setScene(scene);
+        
+        // Centre la fenêtre à l'écran
+        primaryStage.centerOnScreen();
+        
         primaryStage.show();
     }
 
@@ -60,15 +72,22 @@ public class App extends Application {
         Scene scene = new Scene(adminDashboard.getView(), 800, 600);
         primaryStage.setTitle("Dashboard Admin");
         primaryStage.setScene(scene);
+        
+        // Centre la fenêtre à l'écran
+        primaryStage.centerOnScreen();
+        
         primaryStage.show();
     }
 
-    // Nouvelle méthode pour afficher la page d'accueil utilisateur avec menu
     public void showUserHome(String username) {
         UserHome userHome = new UserHome(this, conn, username);
         Scene scene = new Scene(userHome.getView(), 1000, 700);
         primaryStage.setTitle("Espace Utilisateur");
         primaryStage.setScene(scene);
+        
+        // Centre la fenêtre à l'écran
+        primaryStage.centerOnScreen();
+        
         primaryStage.show();
     }
 

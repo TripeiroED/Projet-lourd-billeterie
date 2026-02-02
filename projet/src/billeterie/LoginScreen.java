@@ -1,6 +1,5 @@
 package billeterie;
 
-import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 
@@ -15,17 +14,29 @@ public class LoginScreen {
     public LoginScreen(App app) {
         this.app = app;
 
-        view = new VBox(10);
-        view.setPadding(new Insets(20));
+        view = new VBox();
+        view.getStyleClass().add("root");  // applique la classe CSS root
 
         Label labelUser = new Label("Utilisateur :");
+        labelUser.getStyleClass().add("label");
+
         TextField userField = new TextField();
+        userField.setPromptText("Nom d'utilisateur");
+        userField.getStyleClass().add("text-field");
 
         Label labelPass = new Label("Mot de passe :");
+        labelPass.getStyleClass().add("label");
+
         PasswordField passField = new PasswordField();
+        passField.setPromptText("Mot de passe");
+        passField.getStyleClass().add("password-field");
 
         Button btnLogin = new Button("Se connecter");
-        Button btnRegister = new Button("S'inscrire");  // <-- Nouveau bouton
+        btnLogin.getStyleClass().add("button");
+
+        Button btnRegister = new Button("S'inscrire");
+        btnRegister.getStyleClass().add("register-button");
+
         Label message = new Label();
 
         btnLogin.setOnAction(e -> {
@@ -33,14 +44,17 @@ public class LoginScreen {
             String pass = passField.getText();
 
             if (user.isEmpty() || pass.isEmpty()) {
+                message.setStyle("-fx-text-fill: #ff4c4c; -fx-font-size: 12px;");
                 message.setText("Veuillez remplir tous les champs");
                 return;
             }
 
             try (Connection conn = Database.connect()) {
                 UserDAO dao = new UserDAO(conn);
-                User loggedUser = dao.authenticate(user, pass);  // retourne User ou null
+                User loggedUser = dao.authenticate(user, pass);
+
                 if (loggedUser != null) {
+                    message.setStyle("-fx-text-fill: #00ff00; -fx-font-size: 14px;");
                     message.setText("Connexion réussie !");
                     if ("ADMIN".equalsIgnoreCase(loggedUser.getRole())) {
                         app.showAdminDashboard();
@@ -48,21 +62,24 @@ public class LoginScreen {
                         app.showUserHome(user);
                     }
                 } else {
+                    message.setStyle("-fx-text-fill: #ff4c4c; -fx-font-size: 12px;");
                     message.setText("Utilisateur ou mot de passe incorrect");
                 }
             } catch (SQLException ex) {
-                ex.printStackTrace();
+                message.setStyle("-fx-text-fill: #ff4c4c; -fx-font-size: 12px;");
                 message.setText("Erreur lors de la connexion à la base");
+                ex.printStackTrace();
             }
         });
 
-        // Action pour le bouton "S'inscrire"
-        btnRegister.setOnAction(e -> {
-            app.showRegisterScreen();  // Affiche l'écran d'inscription
-        });
+        btnRegister.setOnAction(e -> app.showRegisterScreen());
 
-        // Ajoute les deux boutons et le message dans la vue
-        view.getChildren().addAll(labelUser, userField, labelPass, passField, btnLogin, btnRegister, message);
+        view.getChildren().addAll(
+            labelUser, userField,
+            labelPass, passField,
+            btnLogin, btnRegister,
+            message
+        );
     }
 
     public VBox getView() {

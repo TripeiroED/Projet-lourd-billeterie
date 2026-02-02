@@ -44,7 +44,7 @@ public class SpectacleDAO {
 
     public List<Spectacle> findAll() throws SQLException {
         List<Spectacle> list = new ArrayList<>();
-        String sql = "SELECT * FROM spectacles";
+        String sql = "SELECT * FROM spectacles ORDER BY date ASC";
         try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 Spectacle s = new Spectacle(
