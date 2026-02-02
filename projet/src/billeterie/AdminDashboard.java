@@ -1,234 +1,313 @@
 package billeterie;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.Stage;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 
 public class AdminDashboard {
 
-    private VBox view;
-    private App app;
+    private BorderPane root;
     private Connection conn;
 
     private ObservableList<User> users = FXCollections.observableArrayList();
     private ObservableList<Spectacle> spectacles = FXCollections.observableArrayList();
 
-    private TableView<User> userTable = new TableView<>();
-    private TableView<Spectacle> spectacleTable = new TableView<>();
-
     public AdminDashboard(App app, Connection conn) {
-        this.app = app;
         this.conn = conn;
 
-        view = new VBox(15);
-        view.setPadding(new Insets(20));
+        root = new BorderPane();
+        root.setStyle("-fx-background-color: #f5f6fa;");
 
-        Label welcomeLabel = new Label("Bienvenue Admin !");
-        welcomeLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold;");
-        view.getChildren().add(welcomeLabel);
-
-        // Fake users (en attendant UserDAO)
-        users.addAll(
-            new User("admin", "ADMIN"),
-            new User("user1", "USER"),
-            new User("user2", "USER")
-        );
-
-        VBox usersSection = createUsersSection();
-        VBox spectaclesSection = createSpectaclesSection();
-
-        ScrollPane scrollPane = new ScrollPane(new VBox(20, usersSection, spectaclesSection));
-        scrollPane.setFitToWidth(true);
-        scrollPane.setPrefHeight(500);
-
-        view.getChildren().add(scrollPane);
-
+        // Charger les utilisateurs et spectacles depuis la BDD
+        loadUsersFromDB();
         loadSpectaclesFromDB();
+
+        root.setTop(createHeader(app));
+        root.setCenter(createContent());
     }
 
-    /** Charger spectacles depuis la BDD */
+    /* ================= HEADER ================= */
+    private HBox createHeader(App app) {
+        Label title = new Label("Dashboard Administrateur");
+        title.setStyle("-fx-font-size: 22px; -fx-font-weight: bold;");
+
+        Button logout = dangerButton("Déconnexion");
+        logout.setOnAction(e -> app.showLoginScreen());
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox header = new HBox(15, title, spacer, logout);
+        header.setPadding(new Insets(20));
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setStyle("-fx-background-color: white; -fx-border-color: #ddd;");
+
+        return header;
+    }
+
+    /* ================= CONTENT ================= */
+    private ScrollPane createContent() {
+        VBox page = new VBox(30);
+        page.setPadding(new Insets(30));
+
+        page.getChildren().addAll(
+                createUsersCard(),
+                createSpectaclesCard()
+        );
+
+        ScrollPane scroll = new ScrollPane(page);
+        scroll.setFitToWidth(true);
+        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scroll.setStyle("-fx-background-color: transparent;");
+
+        return scroll;
+    }
+
+    /* ================= USERS ================= */
+    private VBox createUsersCard() {
+        Label title = sectionTitle("Gestion des utilisateurs");
+
+        VBox list = new VBox(12);
+
+        if (users.isEmpty()) {
+            list.getChildren().add(new Label("Aucun utilisateur"));
+        } else {
+            for (User u : users) {
+                list.getChildren().add(userCard(u));
+            }
+        }
+
+        return card(title, list);
+    }
+
+    private HBox userCard(User u) {
+        Label name = new Label(u.getUsername());
+        name.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+
+        // ComboBox pour modifier le rôle
+        ComboBox<String> roleCombo = new ComboBox<>();
+        roleCombo.getItems().addAll("ADMIN", "USER");
+        roleCombo.setValue(u.getRole());
+        roleCombo.setPrefWidth(120);
+
+        // Bouton pour sauvegarder la modification du rôle
+        Button saveRoleBtn = styledButton("Modifier rôle", "#007aff", "white");
+        saveRoleBtn.setOnAction(e -> {
+            String newRole = roleCombo.getValue();
+            if (!newRole.equals(u.getRole())) {
+                if (confirm("Modifier rôle", "Changer le rôle de " + u.getUsername() + " en " + newRole + " ?")) {
+                    try {
+                        UserDAO dao = new UserDAO(conn);
+                        boolean success = dao.updateRole(u.getUsername(), newRole);
+                        if (success) {
+                            alert("Succès", "Rôle modifié avec succès.");
+                            loadUsersFromDB();
+                            root.setCenter(createContent());
+                        } else {
+                            alert("Erreur", "Modification du rôle échouée.");
+                        }
+                    } catch (SQLException ex) {
+                        alert("Erreur", "Impossible de modifier le rôle");
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
+
+        Button delete = dangerButton("Supprimer");
+        delete.setOnAction(e -> {
+            if (confirm("Supprimer", "Supprimer cet utilisateur ?")) {
+                try {
+                    UserDAO dao = new UserDAO(conn);
+                    dao.delete(u.getUsername());  // suppression en BDD
+                    users.remove(u);               // suppression en liste locale
+                    root.setCenter(createContent());  // rafraîchir l'affichage
+                } catch (SQLException ex) {
+                    alert("Erreur", "Suppression impossible");
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        HBox box = new HBox(15, name, roleCombo, saveRoleBtn, spacer, delete);
+        box.setAlignment(Pos.CENTER_LEFT);
+        box.setPadding(new Insets(12));
+        box.setStyle(cardItemStyle());
+
+        return box;
+    }
+
+    /* ================= SPECTACLES ================= */
+    private VBox createSpectaclesCard() {
+        Label title = sectionTitle("Gestion des spectacles");
+
+        Button add = primaryButton("➕ Ajouter un spectacle");
+        add.setOnAction(e -> openForm(null));
+
+        VBox list = new VBox(15);
+
+        if (spectacles.isEmpty()) {
+            list.getChildren().add(new Label("Aucun spectacle"));
+        } else {
+            for (Spectacle s : spectacles) {
+                list.getChildren().add(spectacleCard(s));
+            }
+        }
+
+        VBox content = new VBox(15, add, list);
+        return card(title, content);
+    }
+
+    private VBox spectacleCard(Spectacle s) {
+        Label name = new Label(s.getNom());
+        name.setStyle("-fx-font-size: 15px; -fx-font-weight: bold;");
+
+        Label info = new Label(
+                "📅 " + s.getDate() +
+                "   📍 " + s.getLieu() +
+                "   💰 " + s.getPrix() + " €"
+        );
+        info.setStyle("-fx-text-fill: #555;");
+
+        Button edit = secondaryButton("Modifier");
+        Button delete = dangerButton("Supprimer");
+
+        edit.setOnAction(e -> openForm(s));
+        delete.setOnAction(e -> deleteSpectacle(s));
+
+        HBox actions = new HBox(10, edit, delete);
+        actions.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox box = new VBox(8, name, info, actions);
+        box.setPadding(new Insets(14));
+        box.setStyle(cardItemStyle());
+
+        return box;
+    }
+
+    /* ================= UI HELPERS ================= */
+    private VBox card(Label title, Node content) {
+        VBox box = new VBox(20, title, content);
+        box.setPadding(new Insets(20));
+        box.setStyle(
+                "-fx-background-color: white;" +
+                "-fx-background-radius: 14;" +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 14, 0, 0, 6);"
+        );
+        return box;
+    }
+
+    private String cardItemStyle() {
+        return
+                "-fx-background-color: #fafafa;" +
+                "-fx-background-radius: 10;" +
+                "-fx-border-color: #ddd;";
+    }
+
+    private Label sectionTitle(String text) {
+        Label l = new Label(text);
+        l.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        return l;
+    }
+
+    private Button primaryButton(String t) {
+        return styledButton(t, "#007aff", "white");
+    }
+
+    private Button secondaryButton(String t) {
+        return styledButton(t, "#e0e0e0", "black");
+    }
+
+    private Button dangerButton(String t) {
+        return styledButton(t, "#e53935", "white");
+    }
+
+    private Button styledButton(String t, String bg, String color) {
+        Button b = new Button(t);
+        b.setStyle(
+                "-fx-background-color: " + bg + ";" +
+                "-fx-text-fill: " + color + ";" +
+                "-fx-background-radius: 8;" +
+                "-fx-font-weight: bold;"
+        );
+        return b;
+    }
+
+    /* ================= DATA ================= */
+
+    private void loadUsersFromDB() {
+        try {
+            UserDAO dao = new UserDAO(conn);
+            users.setAll(dao.findAll());  // récupère la liste des utilisateurs depuis la BDD
+        } catch (SQLException e) {
+            e.printStackTrace();
+            alert("Erreur", "Impossible de charger les utilisateurs depuis la base de données");
+        }
+    }
+
     private void loadSpectaclesFromDB() {
         try {
             SpectacleDAO dao = new SpectacleDAO(conn);
-            spectacles.clear();
-            spectacles.addAll(dao.findAll());
+            spectacles.setAll(dao.findAll());
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    /** -------- USERS SECTION -------- */
-    private VBox createUsersSection() {
-        Label title = new Label("Gestion des Utilisateurs");
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+    /* ================= ACTIONS ================= */
+    private void openForm(Spectacle s) {
+        Stage stage = (Stage) root.getScene().getWindow();
+        SpectacleForm form = new SpectacleForm(stage, s);
+        form.show();
 
-        userTable.getColumns().clear();
-
-        TableColumn<User, String> usernameCol = new TableColumn<>("Nom utilisateur");
-        usernameCol.setCellValueFactory(data -> data.getValue().usernameProperty());
-
-        TableColumn<User, String> roleCol = new TableColumn<>("Rôle");
-        roleCol.setCellValueFactory(data -> data.getValue().roleProperty());
-
-        userTable.getColumns().addAll(usernameCol, roleCol);
-        userTable.setItems(users);
-        userTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-        Button btnDeleteUser = new Button("Supprimer utilisateur");
-        btnDeleteUser.setOnAction(e -> {
-            User selected = userTable.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                if (confirm("Supprimer", "Voulez-vous supprimer cet utilisateur ?")) {
-                    users.remove(selected); // Pas encore de UserDAO
-                }
+        if (form.isSaved()) {
+            try {
+                SpectacleDAO dao = new SpectacleDAO(conn);
+                if (s == null) dao.add(form.getSpectacle());
+                else dao.update(form.getSpectacle());
+                loadSpectaclesFromDB();
+                root.setCenter(createContent());
+            } catch (SQLException e) {
+                alert("Erreur", "Action impossible");
             }
-        });
-
-        HBox btnBox = new HBox(10, btnDeleteUser);
-        btnBox.setAlignment(Pos.CENTER_RIGHT);
-
-        VBox section = new VBox(10, title, userTable, btnBox);
-        section.setPadding(new Insets(10));
-        section.setStyle("-fx-border-color: #2196F3; -fx-border-radius: 8; -fx-background-radius: 8; -fx-background-color: #E3F2FD;");
-
-        return section;
-    }
-
-    /** -------- SPECTACLES SECTION -------- */
-    private VBox createSpectaclesSection() {
-        Label title = new Label("Gestion des Spectacles");
-        title.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-
-        spectacleTable.getColumns().clear();
-
-        TableColumn<Spectacle, String> nomCol = new TableColumn<>("Nom");
-        nomCol.setCellValueFactory(data -> data.getValue().nomProperty());
-
-        TableColumn<Spectacle, String> dateCol = new TableColumn<>("Date");
-        dateCol.setCellValueFactory(data -> data.getValue().dateProperty());
-
-        TableColumn<Spectacle, String> lieuCol = new TableColumn<>("Lieu");
-        lieuCol.setCellValueFactory(data -> data.getValue().lieuProperty());
-
-        TableColumn<Spectacle, Double> prixCol = new TableColumn<>("Prix (€)");
-        prixCol.setCellValueFactory(data -> data.getValue().prixProperty().asObject());
-
-        spectacleTable.getColumns().addAll(nomCol, dateCol, lieuCol, prixCol);
-        spectacleTable.setItems(spectacles);
-        spectacleTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-        Button btnAdd = new Button("Ajouter");
-        Button btnEdit = new Button("Modifier");
-        Button btnDelete = new Button("Supprimer");
-
-        /** ---- Ajouter ---- */
-        btnAdd.setOnAction(e -> {
-            Stage stage = (Stage) view.getScene().getWindow();
-            SpectacleForm form = new SpectacleForm(stage, null);
-
-            form.show();
-            if (form.isSaved()) {
-                try {
-                    SpectacleDAO dao = new SpectacleDAO(conn);
-                    dao.add(form.getSpectacle());
-                    loadSpectaclesFromDB();
-                } catch (SQLException ex) {
-                    showAlert("Erreur", "Impossible d'ajouter le spectacle.");
-                }
-            }
-        });
-
-        /** ---- Modifier ---- */
-        btnEdit.setOnAction(e -> {
-            Spectacle selected = spectacleTable.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-
-                Stage stage = (Stage) view.getScene().getWindow();
-                SpectacleForm form = new SpectacleForm(stage, selected);
-
-                form.show();
-                if (form.isSaved()) {
-                    try {
-                        SpectacleDAO dao = new SpectacleDAO(conn);
-                        dao.update(selected);
-                        loadSpectaclesFromDB();
-                    } catch (SQLException ex) {
-                        showAlert("Erreur", "Impossible de modifier le spectacle.");
-                    }
-                }
-            }
-        });
-
-        /** ---- Supprimer ---- */
-        btnDelete.setOnAction(e -> {
-            Spectacle selected = spectacleTable.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                if (confirm("Supprimer", "Voulez-vous supprimer ce spectacle ?")) {
-                    try {
-                        SpectacleDAO dao = new SpectacleDAO(conn);
-                        dao.delete(selected.getId());   // 🔥 suppression en BDD
-                        loadSpectaclesFromDB();
-                    } catch (SQLException ex) {
-                        showAlert("Erreur", "Impossible de supprimer le spectacle.");
-                    }
-                }
-            }
-        });
-
-        HBox btnBox = new HBox(10, btnAdd, btnEdit, btnDelete);
-        btnBox.setAlignment(Pos.CENTER_RIGHT);
-
-        VBox section = new VBox(10, title, spectacleTable, btnBox);
-        section.setPadding(new Insets(10));
-        section.setStyle("-fx-border-color: #4CAF50; -fx-border-radius: 8; -fx-background-radius: 8; -fx-background-color: #E8F5E9;");
-
-        return section;
-    }
-
-    /** ---------- Alerte simple ---------- */
-    private void showAlert(String title, String msg) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(msg);
-        alert.showAndWait();
-    }
-
-    /** ---------- Confirmation ---------- */
-    private boolean confirm(String title, String msg) {
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, msg, ButtonType.OK, ButtonType.CANCEL);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-
-        return alert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
-    }
-
-    public VBox getView() {
-        return view;
-    }
-
-    /** Classe User simplifiée */
-    public static class User {
-        private javafx.beans.property.SimpleStringProperty username;
-        private javafx.beans.property.SimpleStringProperty role;
-
-        public User(String username, String role) {
-            this.username = new javafx.beans.property.SimpleStringProperty(username);
-            this.role = new javafx.beans.property.SimpleStringProperty(role);
         }
+    }
 
-        public String getUsername() { return username.get(); }
-        public javafx.beans.property.SimpleStringProperty usernameProperty() { return username; }
+    private void deleteSpectacle(Spectacle s) {
+        if (confirm("Supprimer", "Supprimer ce spectacle ?")) {
+            try {
+                new SpectacleDAO(conn).delete(s.getId());
+                loadSpectaclesFromDB();
+                root.setCenter(createContent());
+            } catch (SQLException e) {
+                alert("Erreur", "Suppression impossible");
+            }
+        }
+    }
 
-        public String getRole() { return role.get(); }
-        public javafx.beans.property.SimpleStringProperty roleProperty() { return role; }
+    /* ================= ALERTS ================= */
+    private void alert(String t, String m) {
+        new Alert(Alert.AlertType.INFORMATION, m).showAndWait();
+    }
+
+    private boolean confirm(String t, String m) {
+        return new Alert(Alert.AlertType.CONFIRMATION, m,
+                ButtonType.OK, ButtonType.CANCEL)
+                .showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK;
+    }
+
+    public Pane getView() {
+        return root;
     }
 }

@@ -5,6 +5,8 @@ import java.sql.Connection;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 
@@ -18,7 +20,6 @@ public class UserHome {
     private BorderPane mainLayout = new BorderPane();
 
     private VBox menuBox = new VBox(15);
-    private Label lblWelcome = new Label();
 
     private UserDashboard userDashboard;
 
@@ -27,13 +28,23 @@ public class UserHome {
         this.conn = conn;
         this.username = username;
 
-        // Header
-        lblWelcome.setText("Bienvenue, " + username + " !");
-        lblWelcome.setFont(Font.font(20));
-        lblWelcome.setPadding(new Insets(15));
-        BorderPane.setAlignment(lblWelcome, Pos.CENTER_LEFT);
+        // Header with logo and welcome label
+        HBox headerBox = new HBox(15);
+        headerBox.setPadding(new Insets(15));
+        headerBox.setStyle("-fx-background-color: white; -fx-border-color: #ddd; -fx-border-width: 0 0 1 0;"); // bottom border
+        headerBox.setAlignment(Pos.CENTER_LEFT);
 
-        mainLayout.setTop(lblWelcome);
+        // Load logo image
+        ImageView logoView = createLogoImageView();
+
+        // Welcome label
+        Label lblWelcome = new Label("Bienvenue, " + username + " !");
+        lblWelcome.setFont(Font.font("Arial", 20));
+        lblWelcome.setStyle("-fx-text-fill: #2c3e50;");
+
+        headerBox.getChildren().addAll(logoView, lblWelcome);
+
+        mainLayout.setTop(headerBox);
 
         // Menu latéral
         menuBox.setPadding(new Insets(20));
@@ -67,13 +78,31 @@ public class UserHome {
         });
 
         btnProfil.setOnAction(e -> {
-            Label lbl = new Label("Profil utilisateur (à implémenter)");
-            lbl.setPadding(new Insets(20));
-            lbl.setStyle("-fx-font-size: 16px;");
-            setCenterContent(new StackPane(lbl));
+            UserProfile profileView = new UserProfile(conn, username, () -> {
+                setCenterContent(userHomePage.getView());
+            });
+            setCenterContent(profileView.getView());
         });
 
+
         btnLogout.setOnAction(e -> app.showLoginScreen());
+    }
+
+    private ImageView createLogoImageView() {
+        // Remplace le chemin par celui de ton logo
+        Image logoImage;
+        try {
+            logoImage = new Image(getClass().getResourceAsStream("/images/logo.png"));
+        } catch (Exception e) {
+            // Si le logo n'est pas trouvé, crée un ImageView vide
+            System.err.println("Logo non trouvé, vérifie le chemin de l'image.");
+            return new ImageView();
+        }
+        ImageView imageView = new ImageView(logoImage);
+        imageView.setFitWidth(40);
+        imageView.setFitHeight(40);
+        imageView.setPreserveRatio(true);
+        return imageView;
     }
 
     private void setCenterContent(javafx.scene.Node node) {

@@ -6,6 +6,7 @@ import javafx.stage.Stage;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import javafx.application.Platform;
 import java.sql.SQLException;
 
 public class App extends Application {
@@ -19,6 +20,10 @@ public class App extends Application {
 
         connectDatabase();
         showLoginScreen();
+
+        primaryStage.setTitle("Billetterie");
+        primaryStage.setFullScreen(true);    // plein écran activé UNE SEULE FOIS
+        primaryStage.show();
     }
 
     private void connectDatabase() {
@@ -41,54 +46,43 @@ public class App extends Application {
 
     public void showLoginScreen() {
         LoginScreen loginScreen = new LoginScreen(this);
-        Scene scene = new Scene(loginScreen.getView(), 400, 450);
 
-        // Charge uniquement le CSS du login ici
+        Scene scene = new Scene(loginScreen.getView());
         scene.getStylesheets().add(getClass().getResource("/resources/login.css").toExternalForm());
 
-        primaryStage.setTitle("Connexion Billetterie");
         primaryStage.setScene(scene);
-        
-        // Centre la fenêtre à l'écran
-        primaryStage.centerOnScreen();
-        
-        primaryStage.show();
     }
 
     public void showRegisterScreen() {
         RegisterScreen registerScreen = new RegisterScreen(this);
-        Scene scene = new Scene(registerScreen.getView(), 300, 300);
-        primaryStage.setTitle("Inscription Billetterie");
+        Scene scene = new Scene(registerScreen.getView());
+
         primaryStage.setScene(scene);
-        
-        // Centre la fenêtre à l'écran
-        primaryStage.centerOnScreen();
-        
-        primaryStage.show();
+        primaryStage.setTitle("Inscription Billetterie");
     }
 
     public void showAdminDashboard() {
         AdminDashboard adminDashboard = new AdminDashboard(this, conn);
-        Scene scene = new Scene(adminDashboard.getView(), 800, 600);
-        primaryStage.setTitle("Dashboard Admin");
+        Scene scene = new Scene(adminDashboard.getView());
+
         primaryStage.setScene(scene);
-        
-        // Centre la fenêtre à l'écran
-        primaryStage.centerOnScreen();
-        
-        primaryStage.show();
+        primaryStage.setTitle("Dashboard Administrateur");
     }
 
     public void showUserHome(String username) {
         UserHome userHome = new UserHome(this, conn, username);
-        Scene scene = new Scene(userHome.getView(), 1000, 700);
-        primaryStage.setTitle("Espace Utilisateur");
+        Scene scene = new Scene(userHome.getView());
+
         primaryStage.setScene(scene);
-        
-        // Centre la fenêtre à l'écran
-        primaryStage.centerOnScreen();
-        
-        primaryStage.show();
+        primaryStage.setTitle("Accueil Utilisateur");
+    }
+
+    public void showProfilePage(String username) {
+        UserProfile profilePage = new UserProfile(conn, username, () -> showUserHome(username));
+        Scene scene = new Scene(profilePage.getView());
+
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Profil Utilisateur");
     }
 
     public static void main(String[] args) {

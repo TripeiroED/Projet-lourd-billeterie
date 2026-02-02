@@ -11,11 +11,12 @@ public class SpectacleDAO {
         this.conn = conn;
     }
 
+    // Récupère les 3 spectacles à venir les plus récents à la une
     public List<Spectacle> findFeatured() throws SQLException {
         List<Spectacle> list = new ArrayList<>();
-        String sql = "SELECT * FROM spectacles ORDER BY date DESC LIMIT 3";
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        String sql = "SELECT * FROM spectacles WHERE date >= CURRENT_DATE ORDER BY date ASC LIMIT 3";
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 Spectacle s = new Spectacle(
                     rs.getInt("id"),
@@ -31,10 +32,11 @@ public class SpectacleDAO {
         return list;
     }
 
+    // Compte total des places disponibles pour tous les spectacles à venir
     public int countTotalFreeSeats() throws SQLException {
-        String sql = "SELECT SUM(places_disponibles) AS total FROM spectacles";
-        try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        String sql = "SELECT SUM(places_disponibles) AS total FROM spectacles WHERE date >= CURRENT_DATE";
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
             if (rs.next()) {
                 return rs.getInt("total");
             }
@@ -42,10 +44,12 @@ public class SpectacleDAO {
         return 0;
     }
 
+    // Récupère tous les spectacles à venir
     public List<Spectacle> findAll() throws SQLException {
         List<Spectacle> list = new ArrayList<>();
-        String sql = "SELECT * FROM spectacles ORDER BY date ASC";
-        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+        String sql = "SELECT * FROM spectacles WHERE date >= CURRENT_DATE ORDER BY date ASC";
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 Spectacle s = new Spectacle(
                     rs.getInt("id"),

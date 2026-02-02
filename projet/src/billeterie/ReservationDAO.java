@@ -38,7 +38,7 @@ public class ReservationDAO {
         String checkSql = "SELECT places_disponibles, places_reservees, places_totales FROM spectacles WHERE id = ?";
         String insertSql = "INSERT INTO reservations (username, spectacle_id, places_reservees) VALUES (?, ?, ?)";
         String updateSql = "UPDATE spectacles SET places_reservees = places_reservees + ?, places_disponibles = places_disponibles - ? WHERE id = ?";
-        
+
         try {
             conn.setAutoCommit(false); // début transaction
 
@@ -72,6 +72,61 @@ public class ReservationDAO {
                 updateStmt.setInt(2, placesDemandees);
                 updateStmt.setInt(3, spectacleId);
                 updateStmt.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+        } catch (SQLException e) {
+            conn.rollback();
+            throw e;
+        } finally {
+            conn.setAutoCommit(true);
+        }
+    }
+
+    public boolean deleteReservation(int id) throws SQLException {
+        String sql = "DELETE FROM reservations WHERE id = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            int affectedRows = stmt.executeUpdate();
+            return affectedRows > 0;
+        }
+    }
+
+    // --- Ajout de la méthode annulerReservation ---
+    public boolean annulerReservation(int reservationId) throws SQLException {
+        String selectSql = "SELECT spectacle_id, places_reservees FROM reservations WHERE id = ?";
+        String updateSql = "UPDATE spectacles SET places_reservees = places_reservees - ?, places_disponibles = places_disponibles + ? WHERE id = ?";
+        String deleteSql = "DELETE FROM reservations WHERE id = ?";
+
+        try {
+            conn.setAutoCommit(false);
+
+            int spectacleId;
+            int placesRes;
+
+            try (PreparedStatement selectStmt = conn.prepareStatement(selectSql)) {
+                selectStmt.setInt(1, reservationId);
+                try (ResultSet rs = selectStmt.executeQuery()) {
+                    if (!rs.next()) {
+                        conn.rollback();
+                        return false;
+                    }
+                    spectacleId = rs.getInt("spectacle_id");
+                    placesRes = rs.getInt("places_reservees");
+                }
+            }
+
+            try (PreparedStatement updateStmt = conn.prepareStatement(updateSql)) {
+                updateStmt.setInt(1, placesRes);
+                updateStmt.setInt(2, placesRes);
+                updateStmt.setInt(3, spectacleId);
+                updateStmt.executeUpdate();
+            }
+
+            try (PreparedStatement deleteStmt = conn.prepareStatement(deleteSql)) {
+                deleteStmt.setInt(1, reservationId);
+                deleteStmt.executeUpdate();
             }
 
             conn.commit();
