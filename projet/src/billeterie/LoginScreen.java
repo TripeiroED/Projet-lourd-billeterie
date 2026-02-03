@@ -36,6 +36,7 @@ public class LoginScreen {
 
         Button btnRegister = new Button("S'inscrire");
         btnRegister.getStyleClass().add("register-button");
+        
 
         Label message = new Label();
 

@@ -17,25 +17,32 @@ public class RegisterScreen {
     public RegisterScreen(App app) {
         this.app = app;
 
-        // ===== FORMULAIRE =====
-        VBox form = new VBox(12);
-        form.setPadding(new Insets(25));
+        VBox form = new VBox(10);  // espacement vertical réduit
+        form.setPadding(new Insets(25, 30, 25, 30)); // padding légèrement réduit
         form.setAlignment(Pos.CENTER);
         form.setMaxWidth(420);
 
         form.setStyle(
-            "-fx-font-family: \"Segoe UI\", sans-serif;" +
+            "-fx-font-family: 'Segoe UI', sans-serif;" +
             "-fx-background-color: white;" +
-            "-fx-background-radius: 18;" +
+            "-fx-background-radius: 20;" +
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.3, 0, 6);"
         );
 
         Label title = new Label("Créer un compte");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+        title.setStyle("-fx-font-size: 26px; -fx-font-weight: 700; -fx-text-fill: #1c1c1e;");
 
-        // ===== CHAMPS =====
+        // Regroupement Nom complet + Nom d'utilisateur côte à côte
+        HBox nameBox = new HBox(15);
         TextField fullnameField = createTextField("Nom complet");
+        fullnameField.setMaxWidth(190);
         TextField usernameField = createTextField("Nom d'utilisateur");
+        usernameField.setMaxWidth(190);
+        nameBox.getChildren().addAll(
+            new VBox(label("Nom complet"), fullnameField),
+            new VBox(label("Nom d'utilisateur"), usernameField)
+        );
+
         TextField emailField = createTextField("Email");
         TextField phoneField = createTextField("Téléphone");
 
@@ -44,8 +51,17 @@ public class RegisterScreen {
         styleDatePicker(birthdatePicker);
 
         TextField addressField = createTextField("Adresse");
+
+        // Regroupement Mot de passe + Confirmer mot de passe côte à côte
+        HBox passwordBox = new HBox(15);
         PasswordField passwordField = createPasswordField("Mot de passe");
+        passwordField.setMaxWidth(190);
         PasswordField confirmPasswordField = createPasswordField("Confirmer mot de passe");
+        confirmPasswordField.setMaxWidth(190);
+        passwordBox.getChildren().addAll(
+            new VBox(label("Mot de passe"), passwordField),
+            new VBox(label("Confirmer mot de passe"), confirmPasswordField)
+        );
 
         Label message = new Label();
         message.setWrapText(true);
@@ -55,9 +71,22 @@ public class RegisterScreen {
         stylePrimaryButton(btnRegister);
 
         Button btnBack = new Button("Retour");
-        styleButton(btnBack);
+        styleSecondaryButton(btnBack);
 
-        // ===== ACTION =====
+        // Supprimer contour focus bleu sur btnRegister
+        btnRegister.focusedProperty().addListener((obs, oldV, newV) -> {
+            if (newV) btnRegister.setStyle(
+                "-fx-background-radius: 10;" +
+                "-fx-padding: 12 18;" +
+                "-fx-background-color: #007aff;" +
+                "-fx-text-fill: white;" +
+                "-fx-font-weight: bold;" +
+                "-fx-focus-color: transparent;" +
+                "-fx-faint-focus-color: transparent;" +
+                "-fx-effect: none;"
+            );
+        });
+
         btnRegister.setOnAction(e -> {
             message.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
 
@@ -111,23 +140,20 @@ public class RegisterScreen {
 
         btnBack.setOnAction(e -> app.showLoginScreen());
 
-        // ===== AJOUT FORM =====
+        // Ajout des éléments dans le formulaire
         form.getChildren().addAll(
-                title,
-                label("Nom complet"), fullnameField,
-                label("Nom d'utilisateur"), usernameField,
-                label("Email"), emailField,
-                label("Téléphone"), phoneField,
-                label("Date de naissance"), birthdatePicker,
-                label("Adresse"), addressField,
-                label("Mot de passe"), passwordField,
-                label("Confirmer mot de passe"), confirmPasswordField,
-                btnRegister,
-                btnBack,
-                message
+            title,
+            nameBox,
+            label("Email"), emailField,
+            label("Téléphone"), phoneField,
+            label("Date de naissance"), birthdatePicker,
+            label("Adresse"), addressField,
+            passwordBox,
+            btnRegister,
+            btnBack,
+            message
         );
 
-        // ===== WRAPPER CENTRÉ + SCROLL =====
         VBox wrapper = new VBox(form);
         wrapper.setAlignment(Pos.TOP_CENTER);
         wrapper.setPadding(new Insets(40));
@@ -144,10 +170,9 @@ public class RegisterScreen {
         VBox.setVgrow(scroll, Priority.ALWAYS);
     }
 
-    // ===== LABEL AVEC * =====
     private HBox label(String text) {
         Label l = new Label(text);
-        l.setStyle("-fx-font-weight: bold;");
+        l.setStyle("-fx-font-weight: bold; -fx-text-fill: #1c1c1e;");
 
         Label star = new Label(" *");
         star.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
@@ -157,7 +182,6 @@ public class RegisterScreen {
         return box;
     }
 
-    // ===== STYLES =====
     private TextField createTextField(String placeholder) {
         TextField tf = new TextField();
         tf.setPromptText(placeholder);
@@ -174,34 +198,69 @@ public class RegisterScreen {
 
     private void styleField(Control c) {
         c.setStyle(
-                "-fx-background-radius: 10;" +
-                "-fx-padding: 10;" +
-                "-fx-border-color: #d0d0d0;" +
-                "-fx-border-radius: 10;"
+            "-fx-background-radius: 10;" +
+            "-fx-padding: 12;" +
+            "-fx-border-color: #d0d0d0;" +
+            "-fx-border-radius: 10;" +
+            "-fx-background-color: white;" +
+            "-fx-text-fill: #1c1c1e;"
         );
         c.setMaxWidth(360);
     }
 
     private void styleDatePicker(DatePicker dp) {
         dp.setPrefWidth(360);
-    }
-
-    private void styleButton(Button b) {
-        b.setStyle(
-                "-fx-background-radius: 10;" +
-                "-fx-padding: 10 16;" +
-                "-fx-background-color: #eeeeee;"
+        dp.setStyle(
+            "-fx-background-radius: 10;" +
+            "-fx-border-color: #d0d0d0;" +
+            "-fx-padding: 12;" +
+            "-fx-background-color: white;"
         );
     }
 
     private void stylePrimaryButton(Button b) {
         b.setStyle(
-                "-fx-background-radius: 10;" +
-                "-fx-padding: 12 18;" +
-                "-fx-background-color: #007aff;" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;"
+            "-fx-background-radius: 10;" +
+            "-fx-padding: 12 18;" +
+            "-fx-background-color: #007aff;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-weight: bold;"
         );
+        b.setOnMouseEntered(e -> b.setStyle(
+            "-fx-background-radius: 10;" +
+            "-fx-padding: 12 18;" +
+            "-fx-background-color: #0051c3;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-weight: bold;"
+        ));
+        b.setOnMouseExited(e -> b.setStyle(
+            "-fx-background-radius: 10;" +
+            "-fx-padding: 12 18;" +
+            "-fx-background-color: #007aff;" +
+            "-fx-text-fill: white;" +
+            "-fx-font-weight: bold;"
+        ));
+    }
+
+    private void styleSecondaryButton(Button b) {
+        b.setStyle(
+            "-fx-background-radius: 10;" +
+            "-fx-padding: 10 16;" +
+            "-fx-background-color: #eeeeee;" +
+            "-fx-text-fill: #1c1c1e;"
+        );
+        b.setOnMouseEntered(e -> b.setStyle(
+            "-fx-background-radius: 10;" +
+            "-fx-padding: 10 16;" +
+            "-fx-background-color: #d0d5dc;" +
+            "-fx-text-fill: #1c1c1e;"
+        ));
+        b.setOnMouseExited(e -> b.setStyle(
+            "-fx-background-radius: 10;" +
+            "-fx-padding: 10 16;" +
+            "-fx-background-color: #eeeeee;" +
+            "-fx-text-fill: #1c1c1e;"
+        ));
     }
 
     public VBox getView() {

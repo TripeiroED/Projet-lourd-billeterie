@@ -6,50 +6,51 @@
     -apple-gray-strong: #e5e7ec;
     -apple-text: #1c1c1e;
     -apple-subtle: #6b6b70;
-    -fx-background-color:
-        linear-gradient(to bottom right, #ffffff 0%, #fafbff 40%, #f4f6fb 100%);
+    -fx-background-color: linear-gradient(to bottom right, #ffffff 0%, #fafbff 40%, #f4f6fb 100%);
     -fx-text-fill: -apple-text;
     -fx-alignment: center;
     -fx-padding: 30;
-    -fx-spacing: 15;
-    -fx-pref-width: 400;
-    -fx-pref-height: 450;
+    -fx-spacing: 20;
+    -fx-pref-width: 420;
+    -fx-pref-height: 500;
 }
 
+/* Titres principaux */
+.title {
+    -fx-font-size: 28px;
+    -fx-font-weight: 700;
+    -fx-text-fill: -apple-blue-strong;
+    -fx-padding: 0 0 15 0;
+}
+
+.subtitle {
+    -fx-font-size: 18px;
+    -fx-font-weight: 500;
+    -fx-text-fill: -apple-subtle;
+    -fx-padding: 0 0 25 0;
+}
+
+/* Labels des champs */
 .label {
     -fx-text-fill: -apple-text;
     -fx-font-weight: 600;
-    -fx-font-size: 16px;
+    -fx-font-size: 14px;
+    -fx-padding: 5 0 5 0;
 }
 
-.button {
-    -fx-background-radius: 10;
-    -fx-padding: 10 16;
-    -fx-font-weight: 600;
-    -fx-background-color: linear-gradient(to bottom, #ffffff 0%, #f3f4f6 100%);
-    -fx-border-color: #d0d5dc;
-    -fx-border-width: 1;
-    -fx-text-fill: -apple-text;
-    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0.2, 0, 2);
-}
-
-.button:hover {
-    -fx-background-color: linear-gradient(to bottom, #ffffff 0%, #e9ecf2 100%);
-}
-
-.button:pressed {
-    -fx-background-color: #e1e5ec;
-}
-
+/* Champs texte et mot de passe */
 .text-field, .password-field {
     -fx-background-radius: 10;
-    -fx-padding: 10 12;
+    -fx-padding: 12 14;
     -fx-border-color: #d5d9e0;
     -fx-border-width: 1;
     -fx-background-color: white;
     -fx-text-fill: -apple-text;
     -fx-prompt-text-fill: rgba(0,0,0,0.35);
     -fx-effect: innershadow(gaussian, rgba(0,0,0,0.03), 6, 0.2, 0, 1);
+    -fx-font-size: 14px;
+    -fx-pref-width: 320;
+    -fx-max-width: 320;
 }
 
 .text-field:focused, .password-field:focused {
@@ -57,10 +58,71 @@
     -fx-effect: dropshadow(gaussian, rgba(0,122,255,0.18), 10, 0.3, 0, 2);
 }
 
-/* Style spécifique pour le bouton "S'inscrire" */
+/* Message d’erreur */
+.error-label {
+    -fx-text-fill: #d93025;
+    -fx-font-weight: 600;
+    -fx-font-size: 12px;
+    -fx-padding: 5 0 0 0;
+}
+
+/* Boutons principaux */
+.button {
+    -fx-background-radius: 12;
+    -fx-padding: 12 20;
+    -fx-font-weight: 700;
+    -fx-background-color: linear-gradient(to bottom, #007aff 0%, #0051c3 100%);
+    -fx-border-color: transparent;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 8, 0.2, 0, 3);
+    -fx-cursor: hand;
+    -fx-font-size: 16px;
+    -fx-pref-width: 320;
+    -fx-max-width: 320;
+}
+
+.button:hover {
+    -fx-background-color: linear-gradient(to bottom, #0051c3 0%, #003a7a 100%);
+}
+
+.button:pressed {
+    -fx-background-color: #003a7a;
+}
+
+/* Bouton secondaire "S'inscrire" */
 .register-button {
     -fx-background-color: transparent;
     -fx-text-fill: -apple-blue;
     -fx-underline: true;
     -fx-padding: 10 0 0 0;
+    -fx-font-weight: 600;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+}
+
+.register-button:hover {
+    -fx-underline: true;
+    -fx-text-fill: -apple-blue;
+    -fx-background-color: transparent;
+    -fx-effect: none;       /* Supprime les ombres éventuelles */
+    -fx-border-color: transparent; /* Supprime les bordures */
+    -fx-focus-color: transparent;  /* Désactive la couleur de focus */
+    -fx-faint-focus-color: transparent;
+}
+.register-button:focused {
+    -fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
+    -fx-effect: none;
+    -fx-border-color: transparent;
+}
+
+
+/* Container formulaire */
+.form-container {
+    -fx-background-color: white;
+    -fx-padding: 40;
+    -fx-background-radius: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 15, 0.3, 0, 5);
+    -fx-alignment: center;
+    -fx-spacing: 25;
 }
