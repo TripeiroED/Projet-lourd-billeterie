@@ -18,3 +18,4 @@ C:\xampp\htdocs\Billeterie\projet\src\billeterie\UserHome.java
 C:\xampp\htdocs\Billeterie\projet\src\billeterie\UserHomePage.java
 C:\xampp\htdocs\Billeterie\projet\src\billeterie\UserProfile.java
 C:\xampp\htdocs\Billeterie\projet\src\billeterie\UserReservations.java
+C:\xampp\htdocs\Billeterie\projet\src\billeterie\WelcomeScreen.java

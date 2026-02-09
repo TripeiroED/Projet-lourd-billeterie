@@ -11,26 +11,25 @@ import java.time.LocalDate;
 
 public class RegisterScreen {
 
-    private VBox root;
+    private StackPane root;
     private App app;
 
     public RegisterScreen(App app) {
         this.app = app;
 
-        VBox form = new VBox(10);  // espacement vertical réduit
-        form.setPadding(new Insets(25, 30, 25, 30)); // padding légèrement réduit
+        VBox form = new VBox(14);
         form.setAlignment(Pos.CENTER);
+        form.setPadding(new Insets(30));
         form.setMaxWidth(420);
 
         form.setStyle(
-            "-fx-font-family: 'Segoe UI', sans-serif;" +
             "-fx-background-color: white;" +
-            "-fx-background-radius: 20;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 20, 0.3, 0, 6);"
+            "-fx-background-radius: 18;" +
+            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.18), 30, 0.3, 0, 10);"
         );
 
         Label title = new Label("Créer un compte");
-        title.setStyle("-fx-font-size: 26px; -fx-font-weight: 700; -fx-text-fill: #1c1c1e;");
+        title.setStyle("-fx-font-size: 26px; -fx-font-weight: 800; -fx-text-fill: #0f2027;");
 
         // Regroupement Nom complet + Nom d'utilisateur côte à côte
         HBox nameBox = new HBox(15);
@@ -73,22 +72,8 @@ public class RegisterScreen {
         Button btnBack = new Button("Retour");
         styleSecondaryButton(btnBack);
 
-        // Supprimer contour focus bleu sur btnRegister
-        btnRegister.focusedProperty().addListener((obs, oldV, newV) -> {
-            if (newV) btnRegister.setStyle(
-                "-fx-background-radius: 10;" +
-                "-fx-padding: 12 18;" +
-                "-fx-background-color: #007aff;" +
-                "-fx-text-fill: white;" +
-                "-fx-font-weight: bold;" +
-                "-fx-focus-color: transparent;" +
-                "-fx-faint-focus-color: transparent;" +
-                "-fx-effect: none;"
-            );
-        });
-
         btnRegister.setOnAction(e -> {
-            message.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+            message.setStyle("-fx-text-fill: #ff4c4c; -fx-font-weight: bold;");
 
             String fullname = fullnameField.getText().trim();
             String username = usernameField.getText().trim();
@@ -100,9 +85,9 @@ public class RegisterScreen {
             String confirmPassword = confirmPasswordField.getText();
 
             if (fullname.isEmpty() || username.isEmpty() || email.isEmpty()
-                    || phone.isEmpty() || birthdate == null || address.isEmpty()
-                    || password.isEmpty() || confirmPassword.isEmpty()) {
-                message.setText("Veuillez remplir tous les champs obligatoires (*)");
+                || phone.isEmpty() || birthdate == null || address.isEmpty()
+                || password.isEmpty() || confirmPassword.isEmpty()) {
+                message.setText("Veuillez remplir tous les champs obligatoires *");
                 return;
             }
 
@@ -115,24 +100,23 @@ public class RegisterScreen {
                 UserDAO dao = new UserDAO(conn);
 
                 boolean success = dao.register(
-                        username,
-                        password,
-                        "USER",
-                        fullname,
-                        email,
-                        phone,
-                        birthdate,
-                        address
+                    username,
+                    password,
+                    "USER",
+                    fullname,
+                    email,
+                    phone,
+                    birthdate,
+                    address
                 );
 
                 if (success) {
-                    message.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
+                    message.setStyle("-fx-text-fill: #00ff00; -fx-font-weight: bold;");
                     message.setText("Inscription réussie !");
                     app.showLoginScreen();
                 } else {
                     message.setText("Erreur lors de l'inscription.");
                 }
-
             } catch (SQLException ex) {
                 message.setText("Nom d'utilisateur ou email déjà utilisé.");
             }
@@ -140,7 +124,6 @@ public class RegisterScreen {
 
         btnBack.setOnAction(e -> app.showLoginScreen());
 
-        // Ajout des éléments dans le formulaire
         form.getChildren().addAll(
             title,
             nameBox,
@@ -154,25 +137,20 @@ public class RegisterScreen {
             message
         );
 
-        VBox wrapper = new VBox(form);
-        wrapper.setAlignment(Pos.TOP_CENTER);
-        wrapper.setPadding(new Insets(40));
-
-        ScrollPane scroll = new ScrollPane(wrapper);
-        scroll.setFitToWidth(true);
-        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scroll.setStyle("-fx-background-color: transparent;");
-
-        root = new VBox(scroll);
+        root = new StackPane(form);
         root.setAlignment(Pos.CENTER);
-        root.setStyle("-fx-background-color: #f6f7f9;");
-        VBox.setVgrow(scroll, Priority.ALWAYS);
+        root.setStyle(
+            "-fx-background-color: linear-gradient(to bottom, " +
+            "#0f2027 0%, " +
+            "#203a43 35%, " +
+            "#e4e8f0 100%);"
+        );
+        root.setPadding(new Insets(40));
     }
 
     private HBox label(String text) {
         Label l = new Label(text);
-        l.setStyle("-fx-font-weight: bold; -fx-text-fill: #1c1c1e;");
+        l.setStyle("-fx-font-weight: bold; -fx-text-fill: #0f2027;");
 
         Label star = new Label(" *");
         star.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
@@ -203,7 +181,7 @@ public class RegisterScreen {
             "-fx-border-color: #d0d0d0;" +
             "-fx-border-radius: 10;" +
             "-fx-background-color: white;" +
-            "-fx-text-fill: #1c1c1e;"
+            "-fx-text-fill: #0f2027;"
         );
         c.setMaxWidth(360);
     }
@@ -214,7 +192,8 @@ public class RegisterScreen {
             "-fx-background-radius: 10;" +
             "-fx-border-color: #d0d0d0;" +
             "-fx-padding: 12;" +
-            "-fx-background-color: white;"
+            "-fx-background-color: white;" +
+            "-fx-text-fill: #0f2027;"
         );
     }
 
@@ -224,21 +203,24 @@ public class RegisterScreen {
             "-fx-padding: 12 18;" +
             "-fx-background-color: #007aff;" +
             "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;"
+            "-fx-font-weight: bold;" +
+            "-fx-cursor: hand;"
         );
         b.setOnMouseEntered(e -> b.setStyle(
             "-fx-background-radius: 10;" +
             "-fx-padding: 12 18;" +
             "-fx-background-color: #0051c3;" +
             "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;"
+            "-fx-font-weight: bold;" +
+            "-fx-cursor: hand;"
         ));
         b.setOnMouseExited(e -> b.setStyle(
             "-fx-background-radius: 10;" +
             "-fx-padding: 12 18;" +
             "-fx-background-color: #007aff;" +
             "-fx-text-fill: white;" +
-            "-fx-font-weight: bold;"
+            "-fx-font-weight: bold;" +
+            "-fx-cursor: hand;"
         ));
     }
 
@@ -247,23 +229,26 @@ public class RegisterScreen {
             "-fx-background-radius: 10;" +
             "-fx-padding: 10 16;" +
             "-fx-background-color: #eeeeee;" +
-            "-fx-text-fill: #1c1c1e;"
+            "-fx-text-fill: #0f2027;" +
+            "-fx-cursor: hand;"
         );
         b.setOnMouseEntered(e -> b.setStyle(
             "-fx-background-radius: 10;" +
             "-fx-padding: 10 16;" +
             "-fx-background-color: #d0d5dc;" +
-            "-fx-text-fill: #1c1c1e;"
+            "-fx-text-fill: #0f2027;" +
+            "-fx-cursor: hand;"
         ));
         b.setOnMouseExited(e -> b.setStyle(
             "-fx-background-radius: 10;" +
             "-fx-padding: 10 16;" +
             "-fx-background-color: #eeeeee;" +
-            "-fx-text-fill: #1c1c1e;"
+            "-fx-text-fill: #0f2027;" +
+            "-fx-cursor: hand;"
         ));
     }
 
-    public VBox getView() {
+    public StackPane getView() {
         return root;
     }
 }

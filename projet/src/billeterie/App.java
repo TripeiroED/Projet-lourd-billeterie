@@ -19,7 +19,7 @@ public class App extends Application {
         this.primaryStage = primaryStage;
 
         connectDatabase();
-        showLoginScreen();
+        showWelcomeScreen();
 
         primaryStage.setTitle("Billetterie");
         primaryStage.setMaximized(true);    // plein écran activé UNE SEULE FOIS
@@ -45,6 +45,12 @@ public class App extends Application {
     public Connection getConnection() {
         return conn;
     }
+
+    public void showWelcomeScreen() {
+    WelcomeScreen welcome = new WelcomeScreen(this);
+    Scene scene = new Scene(welcome.getView());
+    primaryStage.setScene(scene);
+}
 
     public void showLoginScreen() {
         LoginScreen loginScreen = new LoginScreen(this);
