@@ -17,7 +17,6 @@ public class UserHomePage {
     private Connection conn;
     private String username;
 
-    // Champ membre pour garder la référence à la section réservations
     private VBox reservationsSection;
 
     public UserHomePage(String username, Connection conn) {
@@ -28,12 +27,6 @@ public class UserHomePage {
         mainView.setStyle("-fx-background-color: #f9f9f9;");
         mainView.setAlignment(Pos.TOP_CENTER);
 
-        Label welcomeLabel = new Label("Bienvenue sur votre espace Billetterie, " + username + " !");
-        welcomeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 28));
-        welcomeLabel.setStyle("-fx-text-fill: #2c3e50;");
-        mainView.getChildren().add(welcomeLabel);
-
-        // Initialise la section réservations et garde la référence
         reservationsSection = createReservationsSection();
 
         mainView.getChildren().addAll(
@@ -49,15 +42,12 @@ public class UserHomePage {
         Label title = createSectionTitle("Mes Réservations");
         box.getChildren().add(title);
 
-        // Charge les réservations dans la section
         loadReservations(box);
 
         return box;
     }
 
-    // Méthode interne pour charger/rafraîchir la liste des réservations
     private void loadReservations(VBox box) {
-        // Nettoie tout sauf le titre (index 0)
         if (box.getChildren().size() > 1) {
             box.getChildren().remove(1, box.getChildren().size());
         }
@@ -72,10 +62,33 @@ public class UserHomePage {
                 VBox listBox = new VBox(8);
                 for (int i = 0; i < Math.min(3, reservations.size()); i++) {
                     Reservation r = reservations.get(i);
+
                     HBox resLine = new HBox(10);
-                    Label lbl = new Label(r.getSpectacleName() + " le " + r.getDate() + ", " + r.getNombrePlaces() + " place(s)");
-                    lbl.setStyle("-fx-font-size: 15px; -fx-text-fill: #34495e;");
-                    resLine.getChildren().add(lbl);
+                    resLine.setAlignment(Pos.CENTER_LEFT);
+
+                    Label lbl = new Label(r.getSpectacleName() + " le " + r.getDate().toString() + ", " + r.getNombrePlaces() + " place(s)");
+                    lbl.setStyle("-fx-font-size: 15px; -fx-text-fill: #2c3e50;");  // texte bleu foncé harmonisé
+                    HBox.setHgrow(lbl, Priority.ALWAYS);
+
+                    Button btnCancel = new Button("Annuler");
+                    btnCancel.setStyle(
+                        "-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-background-radius: 6; -fx-padding: 5 10; -fx-font-size: 14px;"
+                    );
+                    btnCancel.setOnAction(e -> {
+                        try {
+                            boolean canceled = reservationDAO.annulerReservation(r.getId());
+                            if (canceled) {
+                                loadReservations(box);
+                            } else {
+                                showAlert("Erreur", "Impossible d'annuler la réservation.");
+                            }
+                        } catch (SQLException ex) {
+                            ex.printStackTrace();
+                            showAlert("Erreur", "Erreur serveur lors de l'annulation.");
+                        }
+                    });
+
+                    resLine.getChildren().addAll(lbl, btnCancel);
                     listBox.getChildren().add(resLine);
                 }
                 box.getChildren().add(listBox);
@@ -88,6 +101,7 @@ public class UserHomePage {
                 btnSeeAll.setStyle(buttonStyle());
                 btnSeeAll.setOnAction(e -> {
                     // TODO: Naviguer vers la page réservations complète
+                    showAlert("Navigation", "Navigation vers la page complète des réservations à implémenter.");
                 });
                 box.getChildren().add(btnSeeAll);
             }
@@ -98,15 +112,9 @@ public class UserHomePage {
         }
     }
 
-    /**
-     * Méthode publique à appeler pour rafraîchir dynamiquement la liste des réservations,
-     * par exemple après une nouvelle réservation.
-     */
     public void refreshReservations() {
         loadReservations(reservationsSection);
     }
-
-    // ... Le reste de tes méthodes createFeaturedSpectaclesSection(), createAvailableSpectaclesSection(), etc.
 
     private VBox createFeaturedSpectaclesSection() {
         VBox box = createSectionContainer();
@@ -127,10 +135,10 @@ public class UserHomePage {
                     hbox.setAlignment(Pos.CENTER_LEFT);
 
                     Label lblNom = new Label(s.getNom());
-                    lblNom.setFont(Font.font("Arial", FontWeight.BOLD, 15));
+                    lblNom.setFont(Font.font("Segoe UI", FontWeight.BOLD, 15));
                     lblNom.setStyle("-fx-text-fill: #2c3e50;");
 
-                    Label lblDateLieu = new Label(s.getDate() + " à " + s.getLieu());
+                    Label lblDateLieu = new Label(s.getDate().toString() + " à " + s.getLieu());
                     lblDateLieu.setStyle("-fx-text-fill: #7f8c8d;");
 
                     Label lblPrix = new Label(String.format("%.2f €", s.getPrix()));
@@ -146,6 +154,7 @@ public class UserHomePage {
                 btnSeeAll.setStyle(buttonStyle());
                 btnSeeAll.setOnAction(e -> {
                     // TODO: Naviguer vers la page spectacles complète
+                    showAlert("Navigation", "Navigation vers la page complète des spectacles à implémenter.");
                 });
                 box.getChildren().add(btnSeeAll);
             }
@@ -168,7 +177,7 @@ public class UserHomePage {
             int totalFreeSeats = spectacleDAO.countTotalFreeSeats();
 
             Label infoLabel = new Label("Nombre total de places disponibles : " + totalFreeSeats);
-            infoLabel.setFont(Font.font(16));
+            infoLabel.setFont(Font.font("Segoe UI", 16));
             infoLabel.setStyle("-fx-text-fill: #27ae60;");
 
             box.getChildren().add(infoLabel);
@@ -187,7 +196,7 @@ public class UserHomePage {
         box.setPadding(new Insets(20));
         box.setMaxWidth(700);
         box.setStyle(
-            "-fx-background-color: #fff; " +
+            "-fx-background-color: #ffffff; " +
             "-fx-border-radius: 12; " +
             "-fx-background-radius: 12; " +
             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 8, 0, 0, 3);"
@@ -197,7 +206,7 @@ public class UserHomePage {
 
     private Label createSectionTitle(String text) {
         Label title = new Label(text);
-        title.setFont(Font.font("Arial", FontWeight.BOLD, 22));
+        title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 22));
         title.setStyle("-fx-text-fill: #34495e;");
         title.setPadding(new Insets(0, 0, 10, 0));
         title.setUnderline(true);
@@ -207,20 +216,28 @@ public class UserHomePage {
     private Label createInfoLabel(String text) {
         Label lbl = new Label(text);
         lbl.setStyle("-fx-font-style: italic; -fx-text-fill: #7f8c8d;");
-        lbl.setFont(Font.font(14));
+        lbl.setFont(Font.font("Segoe UI", 14));
         return lbl;
     }
 
     private Label createErrorLabel(String text) {
         Label lbl = new Label(text);
         lbl.setStyle("-fx-text-fill: red;");
-        lbl.setFont(Font.font(14));
+        lbl.setFont(Font.font("Segoe UI", 14));
         return lbl;
     }
 
     private String buttonStyle() {
         return "-fx-background-color: #2980b9; -fx-text-fill: white; -fx-padding: 8 15; -fx-background-radius: 6; " +
-               "-fx-font-size: 14px;";
+               "-fx-font-size: 14px; -fx-cursor: hand;";
+    }
+
+    private void showAlert(String title, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 
     public VBox getView() {
