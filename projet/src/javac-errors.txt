@@ -1,0 +1,425 @@
+Picked up JAVA_TOOL_OPTIONS: -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8
+billeterie\view\AdminDashboard.java:7: error: package javafx.collections does not exist
+import javafx.collections.FXCollections;
+                         ^
+billeterie\view\AdminDashboard.java:8: error: package javafx.collections does not exist
+import javafx.collections.ObservableList;
+                         ^
+billeterie\view\AdminDashboard.java:9: error: package javafx.geometry does not exist
+import javafx.geometry.Insets;
+                      ^
+billeterie\view\AdminDashboard.java:10: error: package javafx.geometry does not exist
+import javafx.geometry.Pos;
+                      ^
+billeterie\view\AdminDashboard.java:11: error: package javafx.scene does not exist
+import javafx.scene.Node;
+                   ^
+billeterie\view\AdminDashboard.java:14: error: package javafx.stage does not exist
+import javafx.stage.Stage;
+                   ^
+billeterie\view\App.java:7: error: package javafx.application does not exist
+import javafx.application.Application;
+                         ^
+billeterie\view\App.java:8: error: package javafx.scene does not exist
+import javafx.scene.Scene;
+                   ^
+billeterie\view\App.java:9: error: package javafx.stage does not exist
+import javafx.stage.Stage;
+                   ^
+billeterie\view\App.java:14: error: cannot find symbol
+public class App extends Application {
+                         ^
+  symbol: class Application
+billeterie\view\AdminDashboard.java:24: error: cannot find symbol
+    private BorderPane root;
+            ^
+  symbol:   class BorderPane
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:25: error: cannot find symbol
+    private ObservableList<User> users = FXCollections.observableArrayList();
+            ^
+  symbol:   class ObservableList
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:26: error: cannot find symbol
+    private ObservableList<Spectacle> spectacles = FXCollections.observableArrayList();
+            ^
+  symbol:   class ObservableList
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:45: error: cannot find symbol
+    private HBox createHeader(App app) {
+            ^
+  symbol:   class HBox
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:64: error: cannot find symbol
+    private ScrollPane createContent() {
+            ^
+  symbol:   class ScrollPane
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:81: error: cannot find symbol
+    private VBox createUsersCard() {
+            ^
+  symbol:   class VBox
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:97: error: cannot find symbol
+    private HBox userCard(User u) {
+            ^
+  symbol:   class HBox
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:156: error: cannot find symbol
+    private VBox createSpectaclesCard() {
+            ^
+  symbol:   class VBox
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:176: error: cannot find symbol
+    private VBox spectacleCard(Spectacle s) {
+            ^
+  symbol:   class VBox
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:203: error: cannot find symbol
+    private VBox card(Label title, Node content) {
+                      ^
+  symbol:   class Label
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:203: error: cannot find symbol
+    private VBox card(Label title, Node content) {
+                                   ^
+  symbol:   class Node
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:203: error: cannot find symbol
+    private VBox card(Label title, Node content) {
+            ^
+  symbol:   class VBox
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:219: error: cannot find symbol
+    private Label sectionTitle(String text) {
+            ^
+  symbol:   class Label
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:225: error: cannot find symbol
+    private Button primaryButton(String t) {
+            ^
+  symbol:   class Button
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:229: error: cannot find symbol
+    private Button secondaryButton(String t) {
+            ^
+  symbol:   class Button
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:233: error: cannot find symbol
+    private Button dangerButton(String t) {
+            ^
+  symbol:   class Button
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:237: error: cannot find symbol
+    private Button styledButton(String t, String bg, String color) {
+            ^
+  symbol:   class Button
+  location: class AdminDashboard
+billeterie\view\AdminDashboard.java:309: error: cannot find symbol
+    public Pane getView() {
+           ^
+  symbol:   class Pane
+  location: class AdminDashboard
+billeterie\model\Spectacle.java:6: error: cannot find symbol
+    private IntegerProperty id;
+            ^
+  symbol:   class IntegerProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:7: error: cannot find symbol
+    private StringProperty nom;
+            ^
+  symbol:   class StringProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:8: error: cannot find symbol
+    private StringProperty date;
+            ^
+  symbol:   class StringProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:9: error: cannot find symbol
+    private StringProperty lieu;
+            ^
+  symbol:   class StringProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:10: error: cannot find symbol
+    private DoubleProperty prix;
+            ^
+  symbol:   class DoubleProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:11: error: cannot find symbol
+    private IntegerProperty placesDisponibles;
+            ^
+  symbol:   class IntegerProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:35: error: cannot find symbol
+    public IntegerProperty idProperty() { return id; }
+           ^
+  symbol:   class IntegerProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:39: error: cannot find symbol
+    public StringProperty nomProperty() { return nom; }
+           ^
+  symbol:   class StringProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:43: error: cannot find symbol
+    public StringProperty dateProperty() { return date; }
+           ^
+  symbol:   class StringProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:47: error: cannot find symbol
+    public StringProperty lieuProperty() { return lieu; }
+           ^
+  symbol:   class StringProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:51: error: cannot find symbol
+    public DoubleProperty prixProperty() { return prix; }
+           ^
+  symbol:   class DoubleProperty
+  location: class Spectacle
+billeterie\model\Spectacle.java:55: error: cannot find symbol
+    public IntegerProperty placesDisponiblesProperty() { return placesDisponibles; }
+           ^
+  symbol:   class IntegerProperty
+  location: class Spectacle
+billeterie\view\App.java:15: error: cannot find symbol
+    private Stage primaryStage;
+            ^
+  symbol:   class Stage
+  location: class App
+billeterie\view\App.java:22: error: cannot find symbol
+    public void start(Stage primaryStage) {
+                      ^
+  symbol:   class Stage
+  location: class App
+billeterie\view\AdminDashboard.java:12: error: package javafx.scene.control does not exist
+import javafx.scene.control.*;
+^
+billeterie\view\AdminDashboard.java:13: error: package javafx.scene.layout does not exist
+import javafx.scene.layout.*;
+^
+billeterie\model\Spectacle.java:3: error: package javafx.beans.property does not exist
+import javafx.beans.property.*;
+^
+billeterie\view\LoginScreen.java:5: error: package javafx.geometry does not exist
+import javafx.geometry.Insets;
+                      ^
+billeterie\view\LoginScreen.java:6: error: package javafx.geometry does not exist
+import javafx.geometry.Pos;
+                      ^
+billeterie\view\LoginScreen.java:14: error: cannot find symbol
+    private StackPane root;
+            ^
+  symbol:   class StackPane
+  location: class LoginScreen
+billeterie\view\LoginScreen.java:130: error: cannot find symbol
+    public Pane getView() {
+           ^
+  symbol:   class Pane
+  location: class LoginScreen
+billeterie\view\LoginScreen.java:7: error: package javafx.scene.control does not exist
+import javafx.scene.control.*;
+^
+billeterie\view\LoginScreen.java:8: error: package javafx.scene.layout does not exist
+import javafx.scene.layout.*;
+^
+billeterie\view\RegisterScreen.java:3: error: package javafx.geometry does not exist
+import javafx.geometry.Insets;
+                      ^
+billeterie\view\RegisterScreen.java:4: error: package javafx.geometry does not exist
+import javafx.geometry.Pos;
+                      ^
+billeterie\view\RegisterScreen.java:13: error: cannot find symbol
+    private StackPane root;
+            ^
+  symbol:   class StackPane
+  location: class RegisterScreen
+billeterie\view\RegisterScreen.java:142: error: cannot find symbol
+    private HBox label(String text) {
+            ^
+  symbol:   class HBox
+  location: class RegisterScreen
+billeterie\view\RegisterScreen.java:154: error: cannot find symbol
+    private TextField createTextField(String placeholder) {
+            ^
+  symbol:   class TextField
+  location: class RegisterScreen
+billeterie\view\RegisterScreen.java:161: error: cannot find symbol
+    private PasswordField createPasswordField(String placeholder) {
+            ^
+  symbol:   class PasswordField
+  location: class RegisterScreen
+billeterie\view\RegisterScreen.java:168: error: cannot find symbol
+    private void styleField(Control c) {
+                            ^
+  symbol:   class Control
+  location: class RegisterScreen
+billeterie\view\RegisterScreen.java:179: error: cannot find symbol
+    private void styleDatePicker(DatePicker dp) {
+                                 ^
+  symbol:   class DatePicker
+  location: class RegisterScreen
+billeterie\view\RegisterScreen.java:189: error: cannot find symbol
+    private void stylePrimaryButton(Button b) {
+                                    ^
+  symbol:   class Button
+  location: class RegisterScreen
+billeterie\view\RegisterScreen.java:213: error: cannot find symbol
+    private void styleSecondaryButton(Button b) {
+                                      ^
+  symbol:   class Button
+  location: class RegisterScreen
+billeterie\view\RegisterScreen.java:234: error: cannot find symbol
+    public StackPane getView() {
+           ^
+  symbol:   class StackPane
+  location: class RegisterScreen
+billeterie\view\RegisterScreen.java:5: error: package javafx.scene.control does not exist
+import javafx.scene.control.*;
+^
+billeterie\view\RegisterScreen.java:6: error: package javafx.scene.layout does not exist
+import javafx.scene.layout.*;
+^
+billeterie\view\ReservationDialog.java:5: error: package javafx.scene does not exist
+import javafx.scene.Node;
+                   ^
+billeterie\view\ReservationDialog.java:6: error: package javafx.scene.layout does not exist
+import javafx.scene.layout.VBox;
+                          ^
+billeterie\view\ReservationDialog.java:8: error: cannot find symbol
+public class ReservationDialog extends Dialog<Boolean> {
+                                       ^
+  symbol: class Dialog
+billeterie\view\ReservationDialog.java:10: error: cannot find symbol
+    private final ReservationController reservationController;
+                  ^
+  symbol:   class ReservationController
+  location: class ReservationDialog
+billeterie\view\ReservationDialog.java:14: error: cannot find symbol
+    public ReservationDialog(ReservationController reservationController, String username, Spectacle spectacle) {
+                             ^
+  symbol:   class ReservationController
+  location: class ReservationDialog
+billeterie\view\ReservationDialog.java:4: error: package javafx.scene.control does not exist
+import javafx.scene.control.*;
+^
+billeterie\view\SpectacleForm.java:4: error: package javafx.geometry does not exist
+import javafx.geometry.Insets;
+                      ^
+billeterie\view\SpectacleForm.java:5: error: package javafx.geometry does not exist
+import javafx.geometry.Pos;
+                      ^
+billeterie\view\SpectacleForm.java:6: error: package javafx.scene does not exist
+import javafx.scene.Scene;
+                   ^
+billeterie\view\SpectacleForm.java:13: error: cannot find symbol
+    private Stage stage;
+            ^
+  symbol:   class Stage
+  location: class SpectacleForm
+billeterie\view\SpectacleForm.java:14: error: cannot find symbol
+    private TextField nomField = new TextField();
+            ^
+  symbol:   class TextField
+  location: class SpectacleForm
+billeterie\view\SpectacleForm.java:15: error: cannot find symbol
+    private TextField dateField = new TextField();
+            ^
+  symbol:   class TextField
+  location: class SpectacleForm
+billeterie\view\SpectacleForm.java:16: error: cannot find symbol
+    private TextField lieuField = new TextField();
+            ^
+  symbol:   class TextField
+  location: class SpectacleForm
+billeterie\view\SpectacleForm.java:17: error: cannot find symbol
+    private TextField prixField = new TextField();
+            ^
+  symbol:   class TextField
+  location: class SpectacleForm
+billeterie\view\SpectacleForm.java:23: error: cannot find symbol
+    public SpectacleForm(Stage owner, Spectacle spectacle) {
+                         ^
+  symbol:   class Stage
+  location: class SpectacleForm
+billeterie\view\SpectacleForm.java:7: error: package javafx.scene.control does not exist
+import javafx.scene.control.*;
+^
+billeterie\view\SpectacleForm.java:8: error: package javafx.scene.layout does not exist
+import javafx.scene.layout.*;
+^
+billeterie\view\SpectacleForm.java:9: error: package javafx.stage does not exist
+import javafx.stage.*;
+^
+billeterie\view\UserDashboard.java:10: error: package javafx.collections does not exist
+import javafx.collections.FXCollections;
+                         ^
+billeterie\view\UserDashboard.java:11: error: package javafx.collections does not exist
+import javafx.collections.ObservableList;
+                         ^
+billeterie\view\UserDashboard.java:12: error: package javafx.geometry does not exist
+import javafx.geometry.Insets;
+                      ^
+billeterie\view\UserDashboard.java:13: error: package javafx.geometry does not exist
+import javafx.geometry.Pos;
+                      ^
+billeterie\view\UserDashboard.java:23: error: cannot find symbol
+    private ObservableList<Spectacle> spectacles = FXCollections.observableArrayList();
+            ^
+  symbol:   class ObservableList
+  location: class UserDashboard
+billeterie\view\UserDashboard.java:25: error: cannot find symbol
+    private VBox mainView = new VBox(30);
+            ^
+  symbol:   class VBox
+  location: class UserDashboard
+billeterie\view\UserDashboard.java:26: error: cannot find symbol
+    private FlowPane cardsPane = new FlowPane();
+            ^
+  symbol:   class FlowPane
+  location: class UserDashboard
+billeterie\view\UserDashboard.java:27: error: cannot find symbol
+    private TextArea detailArea = new TextArea();
+            ^
+  symbol:   class TextArea
+  location: class UserDashboard
+billeterie\view\UserDashboard.java:29: error: cannot find symbol
+    private TextField searchField = new TextField();
+            ^
+  symbol:   class TextField
+  location: class UserDashboard
+billeterie\view\UserDashboard.java:33: error: cannot find symbol
+    private Button btnPrev = new Button("Précédent");
+            ^
+  symbol:   class Button
+  location: class UserDashboard
+billeterie\view\UserDashboard.java:34: error: cannot find symbol
+    private Button btnNext = new Button("Suivant");
+            ^
+  symbol:   class Button
+  location: class UserDashboard
+billeterie\view\UserDashboard.java:160: error: cannot find symbol
+    private VBox createCard(Spectacle spectacle) {
+            ^
+  symbol:   class VBox
+  location: class UserDashboard
+billeterie\view\UserDashboard.java:231: error: cannot find symbol
+    public VBox getView() {
+           ^
+  symbol:   class VBox
+  location: class UserDashboard
+billeterie\view\UserDashboard.java:14: error: package javafx.scene.control does not exist
+import javafx.scene.control.*;
+^
+billeterie\view\UserDashboard.java:15: error: package javafx.scene.layout does not exist
+import javafx.scene.layout.*;
+^
+billeterie\view\UserHome.java:5: error: package javafx.geometry does not exist
+import javafx.geometry.Insets;
+                      ^
+billeterie\view\UserHome.java:6: error: package javafx.geometry does not exist
+import javafx.geometry.Pos;
+                      ^
+billeterie\view\UserHome.java:8: error: package javafx.scene.image does not exist
+import javafx.scene.image.Image;
+                         ^
+100 errors
+only showing the first 100 errors, of 663 total; use -Xmaxerrs if you would like to see more
