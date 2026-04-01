@@ -10,11 +10,7 @@ import javafx.scene.layout.StackPane;
 public class WelcomeScreen {
 
     private StackPane root;
-    private App app;
-
     public WelcomeScreen(App app) {
-        this.app = app;
-
         // Texte principal
         Label title = new Label("🎟️ BILLETTERIE");
         title.setStyle("""

@@ -13,6 +13,8 @@ C:\xampp\htdocs\Billeterie\projet\src\billeterie\model\UserDAO.java
 C:\xampp\htdocs\Billeterie\projet\src\billeterie\model\UserProfileData.java
 C:\xampp\htdocs\Billeterie\projet\src\billeterie\view\AdminDashboard.java
 C:\xampp\htdocs\Billeterie\projet\src\billeterie\view\App.java
+C:\xampp\htdocs\Billeterie\projet\src\billeterie\view\AppResources.java
+C:\xampp\htdocs\Billeterie\projet\src\billeterie\view\AppTheme.java
 C:\xampp\htdocs\Billeterie\projet\src\billeterie\view\LoginScreen.java
 C:\xampp\htdocs\Billeterie\projet\src\billeterie\view\RegisterScreen.java
 C:\xampp\htdocs\Billeterie\projet\src\billeterie\view\ReservationDialog.java

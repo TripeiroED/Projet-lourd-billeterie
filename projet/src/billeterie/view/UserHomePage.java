@@ -6,8 +6,13 @@ import billeterie.model.Reservation;
 import billeterie.model.Spectacle;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -15,230 +20,246 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class UserHomePage {
-
-    private VBox mainView = new VBox(25);
+    private final VBox mainView = new VBox(22);
     private final ReservationController reservationController;
     private final SpectacleController spectacleController;
     private final String username;
+    private final Runnable onDataChanged;
 
-    private VBox reservationsSection;
+    private final VBox reservationsSection = AppTheme.createCardBox();
+    private final VBox featuredSection = AppTheme.createCardBox();
+    private final VBox availabilitySection = AppTheme.createCardBox();
 
-    // 🔹 Label pour le compteur de réservations
-    private Label reservationsCountLabel;
+    private final Label reservationsCountValue = createMetricValue();
+    private final Label spectacleCountValue = createMetricValue();
+    private final Label freeSeatsValue = createMetricValue();
 
     public UserHomePage(App app, String username) {
+        this(app, username, null);
+    }
+
+    public UserHomePage(App app, String username, Runnable onDataChanged) {
         this.reservationController = app.getReservationController();
         this.spectacleController = app.getSpectacleController();
         this.username = username;
+        this.onDataChanged = onDataChanged;
 
         mainView.setPadding(new Insets(30));
-        mainView.setStyle("-fx-background-color: linear-gradient(to bottom, #f0f4f8, #d9e2ec);");
-        mainView.setAlignment(Pos.TOP_CENTER);
+        AppTheme.stylePage(mainView);
 
-        reservationsSection = createReservationsSection();
+        reservationsSection.getChildren().add(AppTheme.sectionTitle("Mes reservations"));
+        featuredSection.getChildren().add(AppTheme.sectionTitle("Spectacles a suivre"));
+        availabilitySection.getChildren().add(AppTheme.sectionTitle("Disponibilite globale"));
 
         mainView.getChildren().addAll(
-                createHeader(),
-                createTopSummarySection(),
+                createHeroSection(),
+                createSummarySection(),
                 reservationsSection,
-                createFeaturedSpectaclesSection(),
-                createAvailableSpectaclesSection());
+                featuredSection,
+                availabilitySection);
+
+        refreshData();
     }
 
-    private Label createHeader() {
-        Label header = new Label("Bienvenue, " + username + " 👋");
-        header.setFont(Font.font("Segoe UI", FontWeight.BOLD, 26));
-        header.setStyle("-fx-text-fill: #1f2937;");
-        return header;
+    public void refreshData() {
+        refreshSummaryCards();
+        refreshReservationsSection();
+        refreshFeaturedSection();
+        refreshAvailabilitySection();
     }
 
-    private VBox createReservationsSection() {
-        VBox box = createCard();
-        box.getChildren().add(createSectionTitle("🎟 Mes Réservations"));
-        loadReservations(box);
-        return box;
+    private VBox createHeroSection() {
+        VBox hero = AppTheme.createCardBox();
+        hero.setSpacing(8);
+
+        Label title = AppTheme.pageTitle("Bonjour, " + username);
+        Label subtitle = AppTheme.mutedLabel(
+                "Retrouve tes reservations, les disponibilites en direct et les prochains spectacles.");
+
+        hero.getChildren().addAll(title, subtitle);
+        return hero;
     }
 
-    private void loadReservations(VBox box) {
-        // Supprime tout sauf le titre
-        box.getChildren().remove(1, box.getChildren().size());
-
-        try {
-            List<Reservation> reservations = reservationController.findByUsername(username);
-
-            if (reservations.isEmpty()) {
-                box.getChildren().add(createInfoLabel("Aucune réservation pour le moment."));
-                return;
-            }
-
-            for (Reservation r : reservations.stream().limit(3).toList()) {
-                box.getChildren().add(createReservationCard(r));
-            }
-
-        } catch (SQLException e) {
-            box.getChildren().add(createErrorLabel("Erreur chargement réservations"));
-        }
-    }
-
-    private HBox createReservationCard(Reservation r) {
-        Label title = new Label(r.getSpectacleName());
-        title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 15));
-
-        Label details = new Label(r.getDate() + " • " + r.getNombrePlaces() + " place(s)");
-        details.setStyle("-fx-text-fill:#6b7280;");
-
-        VBox text = new VBox(3, title, details);
-
-        Button cancel = new Button("Annuler");
-        cancel.setStyle("-fx-background-color:#ef4444; -fx-text-fill:white; -fx-background-radius:8;");
-
-        cancel.setOnAction(e -> {
-            try {
-                boolean success = reservationController.annulerReservation(r.getId());
-                if (success) {
-                    loadReservations(reservationsSection); // recharge les réservations
-                    refreshReservationCount(); // 🔹 met à jour le compteur
-                } else {
-                    showAlert("Erreur", "Impossible d'annuler la réservation.");
-                }
-            } catch (SQLException ex) {
-                showAlert("Erreur", "Impossible d'annuler");
-                ex.printStackTrace();
-            }
-        });
-
-        HBox card = new HBox(15, text, cancel);
-        card.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(text, Priority.ALWAYS);
-        card.setPadding(new Insets(10));
-        card.setStyle("-fx-background-color:#f9fafb; -fx-background-radius:10;");
-
-        return card;
-    }
-
-    private VBox createFeaturedSpectaclesSection() {
-        VBox box = createCard();
-        box.getChildren().add(createSectionTitle("🔥 Spectacles populaires"));
-
-        try {
-            for (Spectacle s : spectacleController.findFeatured()) {
-                box.getChildren().add(createSpectacleCard(s));
-            }
-        } catch (SQLException e) {
-            box.getChildren().add(createErrorLabel("Erreur spectacles"));
-        }
-
-        return box;
-    }
-
-    private HBox createSpectacleCard(Spectacle s) {
-        Label name = new Label(s.getNom());
-        name.setFont(Font.font("Segoe UI", FontWeight.BOLD, 14));
-
-        Label info = new Label(s.getDate() + " • " + s.getLieu());
-        Label price = new Label(s.getPrix() + " €");
-        price.setStyle("-fx-text-fill:#10b981; -fx-font-weight:bold;");
-
-        VBox text = new VBox(name, info);
-
-        HBox card = new HBox(15, text, price);
-        card.setAlignment(Pos.CENTER_LEFT);
-        HBox.setHgrow(text, Priority.ALWAYS);
-        card.setPadding(new Insets(10));
-        card.setStyle("-fx-background-color:#ffffff; -fx-border-color:#e5e7eb; -fx-border-radius:10;");
-
-        return card;
-    }
-
-    private VBox createAvailableSpectaclesSection() {
-        VBox box = createCard();
-        box.getChildren().add(createSectionTitle("📊 Disponibilité"));
-
-        try {
-            int seats = spectacleController.countTotalFreeSeats();
-            Label lbl = new Label(seats + " places restantes");
-            lbl.setFont(Font.font(20));
-            lbl.setStyle("-fx-text-fill:#22c55e;");
-            box.getChildren().add(lbl);
-        } catch (SQLException e) {
-            box.getChildren().add(createErrorLabel("Erreur"));
-        }
-
-        return box;
-    }
-
-    private HBox createTopSummarySection() {
-        HBox row = new HBox(15);
-        row.setAlignment(Pos.CENTER);
-
-        // 🔹 compteur de réservations en temps réel
-        reservationsCountLabel = new Label(String.valueOf(getReservationCount()));
-        reservationsCountLabel.setFont(Font.font(22));
-
-        VBox reservationsCard = new VBox(5, new Label("Réservations"), reservationsCountLabel);
-        reservationsCard.setPadding(new Insets(15));
-        reservationsCard.setAlignment(Pos.CENTER);
-        reservationsCard.setStyle(
-                "-fx-background-color:white; -fx-background-radius:12; -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.1),6,0,0,2);");
-
+    private HBox createSummarySection() {
+        HBox row = new HBox(16);
+        row.setAlignment(Pos.CENTER_LEFT);
         row.getChildren().addAll(
-                reservationsCard,
-                createStatCard("Spectacles", String.valueOf(getSpectacleCount())),
-                createStatCard("Places", String.valueOf(getTotalFreeSeats())));
-
+                createMetricCard("Reservations", "Total de reservations actives", reservationsCountValue),
+                createMetricCard("Spectacles", "Spectacles a venir", spectacleCountValue),
+                createMetricCard("Places libres", "Total encore disponible", freeSeatsValue));
         return row;
     }
 
-    // 🔹 Méthode pour mettre à jour le compteur
-    public void refreshReservationCount() {
-        reservationsCountLabel.setText(String.valueOf(getReservationCount()));
+    private VBox createMetricCard(String title, String subtitle, Label valueLabel) {
+        VBox card = AppTheme.createCardBox();
+        card.setSpacing(6);
+        card.setPrefWidth(220);
+
+        Label titleLabel = new Label(title);
+        titleLabel.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 14));
+        titleLabel.setStyle(AppTheme.TITLE_TEXT_STYLE);
+
+        Label subtitleLabel = AppTheme.mutedLabel(subtitle);
+        valueLabel.setMaxWidth(Double.MAX_VALUE);
+
+        card.getChildren().addAll(titleLabel, subtitleLabel, valueLabel);
+        return card;
     }
 
-    private VBox createStatCard(String title, String value) {
-        Label t = new Label(title);
-        Label v = new Label(value);
-        v.setFont(Font.font(22));
-
-        VBox box = new VBox(5, t, v);
-        box.setPadding(new Insets(15));
-        box.setAlignment(Pos.CENTER);
-        box.setStyle(
-                "-fx-background-color:white; -fx-background-radius:12; -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.1),6,0,0,2);");
-
-        return box;
+    private Label createMetricValue() {
+        Label label = new Label("0");
+        label.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 28));
+        label.setStyle("-fx-text-fill: #1d4ed8; -fx-font-family: '" + AppTheme.FONT_FAMILY + "';");
+        return label;
     }
 
-    private VBox createCard() {
-        VBox box = new VBox(12);
-        box.setPadding(new Insets(20));
-        box.setMaxWidth(750);
-        box.setStyle(
-                "-fx-background-color:white; -fx-background-radius:15; -fx-effect:dropshadow(gaussian,rgba(0,0,0,0.08),10,0,0,4);");
-        return box;
+    private void refreshSummaryCards() {
+        reservationsCountValue.setText(String.valueOf(getReservationCount()));
+        spectacleCountValue.setText(String.valueOf(getSpectacleCount()));
+        freeSeatsValue.setText(String.valueOf(getTotalFreeSeats()));
     }
 
-    private Label createSectionTitle(String text) {
-        Label lbl = new Label(text);
-        lbl.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
-        return lbl;
+    private void refreshReservationsSection() {
+        clearSection(reservationsSection);
+
+        try {
+            List<Reservation> reservations = reservationController.findByUsername(username);
+            if (reservations.isEmpty()) {
+                reservationsSection.getChildren().add(AppTheme.mutedLabel("Aucune reservation pour le moment."));
+                return;
+            }
+
+            int limit = Math.min(3, reservations.size());
+            for (int i = 0; i < limit; i++) {
+                reservationsSection.getChildren().add(createReservationCard(reservations.get(i)));
+            }
+        } catch (SQLException e) {
+            reservationsSection.getChildren().add(createErrorLabel("Impossible de charger les reservations."));
+        }
     }
 
-    private Label createInfoLabel(String text) {
-        Label lbl = new Label(text);
-        lbl.setStyle("-fx-text-fill:gray;");
-        return lbl;
+    private HBox createReservationCard(Reservation reservation) {
+        HBox card = new HBox(16);
+        card.setAlignment(Pos.CENTER_LEFT);
+        card.setPadding(new Insets(14));
+        AppTheme.styleSoftCard(card);
+
+        VBox textBox = new VBox(4);
+        Label title = new Label(reservation.getSpectacleName());
+        title.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 15));
+        title.setStyle(AppTheme.TITLE_TEXT_STYLE);
+
+        Label details = AppTheme.mutedLabel(
+                reservation.getDate() + " | " + reservation.getNombrePlaces() + " place(s)");
+        textBox.getChildren().addAll(title, details);
+
+        Button cancelButton = new Button("Annuler");
+        AppTheme.styleDangerButton(cancelButton);
+        cancelButton.setOnAction(event -> cancelReservation(reservation.getId()));
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        card.getChildren().addAll(textBox, spacer, cancelButton);
+        return card;
+    }
+
+    private void refreshFeaturedSection() {
+        clearSection(featuredSection);
+
+        try {
+            List<Spectacle> spectacles = spectacleController.findFeatured();
+            if (spectacles.isEmpty()) {
+                featuredSection.getChildren().add(AppTheme.mutedLabel("Aucun spectacle a la une."));
+                return;
+            }
+
+            for (Spectacle spectacle : spectacles) {
+                featuredSection.getChildren().add(createFeaturedCard(spectacle));
+            }
+        } catch (SQLException e) {
+            featuredSection.getChildren().add(createErrorLabel("Impossible de charger les spectacles."));
+        }
+    }
+
+    private HBox createFeaturedCard(Spectacle spectacle) {
+        HBox card = new HBox(16);
+        card.setAlignment(Pos.CENTER_LEFT);
+        card.setPadding(new Insets(14));
+        AppTheme.styleSoftCard(card);
+
+        VBox textBox = new VBox(4);
+        Label name = new Label(spectacle.getNom());
+        name.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 15));
+        name.setStyle(AppTheme.TITLE_TEXT_STYLE);
+
+        Label info = AppTheme.mutedLabel(spectacle.getDate() + " | " + spectacle.getLieu());
+        Label seats = AppTheme.mutedLabel("Places dispo : " + spectacle.getPlacesDisponibles());
+        textBox.getChildren().addAll(name, info, seats);
+
+        Label price = new Label(AppTheme.formatPrice(spectacle.getPrix()));
+        price.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 14));
+        price.setStyle("-fx-text-fill: #0f766e; -fx-font-family: '" + AppTheme.FONT_FAMILY + "';");
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        card.getChildren().addAll(textBox, spacer, price);
+        return card;
+    }
+
+    private void refreshAvailabilitySection() {
+        clearSection(availabilitySection);
+
+        try {
+            int freeSeats = spectacleController.countTotalFreeSeats();
+            Label totalLabel = new Label(freeSeats + " places encore disponibles");
+            totalLabel.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 24));
+            totalLabel.setStyle("-fx-text-fill: #0f766e; -fx-font-family: '" + AppTheme.FONT_FAMILY + "';");
+
+            Label helper = AppTheme.mutedLabel(
+                    "Ce chiffre se met a jour des qu'une reservation est creee ou annulee.");
+            availabilitySection.getChildren().addAll(totalLabel, helper);
+        } catch (SQLException e) {
+            availabilitySection.getChildren().add(createErrorLabel("Impossible de calculer la disponibilite."));
+        }
+    }
+
+    private void cancelReservation(int reservationId) {
+        try {
+            boolean success = reservationController.annulerReservation(reservationId);
+            if (success) {
+                notifyDataChanged();
+            } else {
+                showAlert("Erreur", "La reservation n'a pas pu etre annulee.");
+            }
+        } catch (SQLException e) {
+            showAlert("Erreur", "Une erreur est survenue pendant l'annulation.");
+        }
+    }
+
+    private void notifyDataChanged() {
+        if (onDataChanged != null) {
+            onDataChanged.run();
+        } else {
+            refreshData();
+        }
+    }
+
+    private void clearSection(VBox section) {
+        if (section.getChildren().size() > 1) {
+            section.getChildren().remove(1, section.getChildren().size());
+        }
     }
 
     private Label createErrorLabel(String text) {
-        Label lbl = new Label(text);
-        lbl.setStyle("-fx-text-fill:red;");
-        return lbl;
+        Label label = new Label(text);
+        label.setStyle("-fx-text-fill: #dc2626; -fx-font-family: '" + AppTheme.FONT_FAMILY + "';");
+        return label;
     }
 
     private int getReservationCount() {
         try {
             return reservationController.findByUsername(username).size();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return 0;
         }
     }
@@ -246,7 +267,7 @@ public class UserHomePage {
     private int getSpectacleCount() {
         try {
             return spectacleController.findAll().size();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return 0;
         }
     }
@@ -254,13 +275,13 @@ public class UserHomePage {
     private int getTotalFreeSeats() {
         try {
             return spectacleController.countTotalFreeSeats();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             return 0;
         }
     }
 
-    private void showAlert(String title, String msg) {
-        new Alert(Alert.AlertType.INFORMATION, msg).showAndWait();
+    private void showAlert(String title, String message) {
+        new Alert(Alert.AlertType.INFORMATION, message).showAndWait();
     }
 
     public VBox getView() {

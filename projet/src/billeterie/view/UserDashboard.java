@@ -3,120 +3,148 @@ package billeterie.view;
 import billeterie.controller.ReservationController;
 import billeterie.controller.SpectacleController;
 import billeterie.model.Spectacle;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+
+import java.sql.SQLException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class UserDashboard {
+    private static final int ITEMS_PER_PAGE = 8;
 
     private final SpectacleController spectacleController;
     private final ReservationController reservationController;
     private final String username;
+    private final Runnable onDataChanged;
 
-    private ObservableList<Spectacle> spectacles = FXCollections.observableArrayList();
-
-    private VBox mainView = new VBox(30);
-    private FlowPane cardsPane = new FlowPane();
-    private TextArea detailArea = new TextArea();
-
-    private TextField searchField = new TextField();
+    private final ObservableList<Spectacle> spectacles = FXCollections.observableArrayList();
+    private final VBox mainView = new VBox(20);
+    private final FlowPane cardsPane = new FlowPane();
+    private final TextArea detailArea = new TextArea();
+    private final TextField searchField = new TextField();
+    private final Label resultLabel = AppTheme.mutedLabel("Chargement...");
+    private final Button btnPrev = new Button("Precedent");
+    private final Button btnNext = new Button("Suivant");
 
     private int currentPage = 0;
-    private static final int ITEMS_PER_PAGE = 8;
-    private Button btnPrev = new Button("Précédent");
-    private Button btnNext = new Button("Suivant");
 
     public UserDashboard(App app, String username) {
+        this(app, username, null);
+    }
+
+    public UserDashboard(App app, String username, Runnable onDataChanged) {
         this.spectacleController = app.getSpectacleController();
         this.reservationController = app.getReservationController();
         this.username = username;
+        this.onDataChanged = onDataChanged;
 
-        loadSpectaclesFromDB();
+        mainView.setPadding(new Insets(30));
+        AppTheme.stylePage(mainView);
 
         setupSearchField();
-        setupDetailArea();
         setupCardsPane();
+        setupDetailArea();
         setupPaginationButtons();
 
-        HBox paginationBox = new HBox(20, btnPrev, btnNext);
-        paginationBox.setAlignment(Pos.CENTER);
-        paginationBox.setPadding(new Insets(15, 0, 15, 0));
+        VBox catalogCard = AppTheme.createCardBox();
+        catalogCard.getChildren().addAll(
+                AppTheme.sectionTitle("Catalogue"),
+                createToolbar(),
+                cardsPane,
+                createPaginationBox());
 
-        mainView.setPadding(new Insets(40));
-        mainView.setStyle("-fx-background-color: #f9f9f9;"); // même fond que UserHomePage
-        mainView.getChildren().addAll(searchField, cardsPane, paginationBox, detailArea);
+        VBox detailCard = AppTheme.createCardBox();
+        detailCard.getChildren().addAll(AppTheme.sectionTitle("Details du spectacle"), detailArea);
 
+        mainView.getChildren().addAll(
+                createHeroSection(),
+                catalogCard,
+                detailCard);
+
+        refreshData();
+    }
+
+    public void refreshData() {
+        loadSpectaclesFromDB();
         updateCards();
     }
 
-    private void loadSpectaclesFromDB() {
-        try {
-            spectacles.clear();
-            spectacles.addAll(spectacleController.findAll());
-            System.out.println("Spectacles chargés : " + spectacles.size());
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    private VBox createHeroSection() {
+        VBox hero = AppTheme.createCardBox();
+        hero.setSpacing(8);
+        hero.getChildren().addAll(
+                AppTheme.pageTitle("Spectacles disponibles"),
+                AppTheme.mutedLabel("Recherche, consulte les details et reserve sans quitter ton espace."));
+        return hero;
+    }
+
+    private HBox createToolbar() {
+        HBox toolbar = new HBox(14);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+
+        Label searchLabel = AppTheme.mutedLabel("Recherche");
+        VBox searchBox = new VBox(6, searchLabel, searchField);
+        HBox.setHgrow(searchBox, Priority.ALWAYS);
+
+        VBox countBox = new VBox(6, AppTheme.mutedLabel("Resultats"), resultLabel);
+        toolbar.getChildren().addAll(searchBox, countBox);
+        return toolbar;
+    }
+
+    private HBox createPaginationBox() {
+        HBox paginationBox = new HBox(12, btnPrev, btnNext);
+        paginationBox.setAlignment(Pos.CENTER);
+        paginationBox.setPadding(new Insets(4, 0, 0, 0));
+        return paginationBox;
     }
 
     private void setupSearchField() {
-        searchField.setPromptText("Rechercher un spectacle...");
-        searchField.setStyle(
-                "-fx-font-size: 14px; " +
-                        "-fx-padding: 8 12; " +
-                        "-fx-background-radius: 6; " +
-                        "-fx-border-radius: 6; " +
-                        "-fx-border-color: #d1d8e0;");
+        searchField.setPromptText("Rechercher un spectacle par nom");
+        AppTheme.styleField(searchField);
         searchField.textProperty().addListener((obs, oldVal, newVal) -> {
             currentPage = 0;
             updateCards();
         });
     }
 
-    private void setupDetailArea() {
-        detailArea.setPrefHeight(150);
-        detailArea.setEditable(false);
-        detailArea.setWrapText(true);
-        detailArea.setStyle(
-                "-fx-font-size: 14px; " +
-                        "-fx-padding: 10; " +
-                        "-fx-background-color: #f8f9fa; " +
-                        "-fx-border-color: #ced4da; " +
-                        "-fx-border-radius: 6; " +
-                        "-fx-background-radius: 6;");
+    private void setupCardsPane() {
+        cardsPane.setHgap(18);
+        cardsPane.setVgap(18);
+        cardsPane.setPrefWrapLength(940);
     }
 
-    private void setupCardsPane() {
-        cardsPane.setHgap(30);
-        cardsPane.setVgap(30);
-        cardsPane.setPadding(new Insets(20));
-        cardsPane.setPrefWrapLength(900);
+    private void setupDetailArea() {
+        detailArea.setEditable(false);
+        detailArea.setPrefRowCount(6);
+        AppTheme.styleTextArea(detailArea);
+        detailArea.setText("Selectionne un spectacle pour voir ses details.");
     }
 
     private void setupPaginationButtons() {
-        String btnStyle = "-fx-font-size: 14px; " +
-                "-fx-padding: 8 18; " +
-                "-fx-background-color: #2980b9; " + // couleur primaire bleu
-                "-fx-text-fill: white; " +
-                "-fx-background-radius: 6;";
-        btnPrev.setStyle(btnStyle);
-        btnNext.setStyle(btnStyle);
+        AppTheme.styleSecondaryButton(btnPrev);
+        AppTheme.stylePrimaryButton(btnNext);
 
-        btnPrev.setOnAction(e -> {
+        btnPrev.setOnAction(event -> {
             if (currentPage > 0) {
                 currentPage--;
                 updateCards();
             }
         });
 
-        btnNext.setOnAction(e -> {
+        btnNext.setOnAction(event -> {
             if ((currentPage + 1) * ITEMS_PER_PAGE < getFilteredSpectacles().size()) {
                 currentPage++;
                 updateCards();
@@ -124,14 +152,24 @@ public class UserDashboard {
         });
     }
 
+    private void loadSpectaclesFromDB() {
+        try {
+            spectacles.setAll(spectacleController.findAll());
+        } catch (SQLException e) {
+            spectacles.clear();
+            detailArea.setText("Impossible de charger les spectacles.");
+        }
+    }
+
     private List<Spectacle> getFilteredSpectacles() {
         String filter = searchField.getText();
-        if (filter == null || filter.isEmpty()) {
+        if (filter == null || filter.isBlank()) {
             return spectacles;
         }
-        String lowerFilter = filter.toLowerCase();
+
+        String normalizedFilter = filter.toLowerCase();
         return spectacles.stream()
-                .filter(s -> s.getNom().toLowerCase().contains(lowerFilter))
+                .filter(spectacle -> spectacle.getNom().toLowerCase().contains(normalizedFilter))
                 .collect(Collectors.toList());
     }
 
@@ -139,11 +177,24 @@ public class UserDashboard {
         cardsPane.getChildren().clear();
 
         List<Spectacle> filtered = getFilteredSpectacles();
+        resultLabel.setText(filtered.size() + " spectacle(s)");
+
+        if (filtered.isEmpty()) {
+            VBox emptyCard = AppTheme.createCardBox();
+            emptyCard.getChildren().addAll(
+                    AppTheme.sectionTitle("Aucun resultat"),
+                    AppTheme.mutedLabel("Essaie un autre nom ou reinitialise la recherche."));
+            emptyCard.setPrefWidth(420);
+            cardsPane.getChildren().add(emptyCard);
+            btnPrev.setDisable(true);
+            btnNext.setDisable(true);
+            return;
+        }
 
         int start = currentPage * ITEMS_PER_PAGE;
         int end = Math.min(start + ITEMS_PER_PAGE, filtered.size());
 
-        if (start >= filtered.size() && !filtered.isEmpty()) {
+        if (start >= filtered.size()) {
             currentPage = 0;
             start = 0;
             end = Math.min(ITEMS_PER_PAGE, filtered.size());
@@ -158,74 +209,73 @@ public class UserDashboard {
     }
 
     private VBox createCard(Spectacle spectacle) {
+        VBox card = AppTheme.createCardBox();
+        card.setPrefWidth(280);
+        card.setSpacing(10);
+
         Label title = new Label(spectacle.getNom());
-        title.setStyle(
-                "-fx-font-size: 18px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-text-fill: #2c3e50;" // couleur texte principal cohérente
-        );
+        title.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 18));
+        title.setStyle(AppTheme.TITLE_TEXT_STYLE);
 
-        Label date = new Label("Date : " + spectacle.getDate());
-        date.setStyle(
-                "-fx-font-size: 13px; " +
-                        "-fx-text-fill: #34495e;" // couleur texte secondaire
-        );
+        Label date = AppTheme.mutedLabel("Date : " + spectacle.getDate());
+        Label location = AppTheme.mutedLabel("Lieu : " + spectacle.getLieu());
 
-        Label location = new Label("Lieu : " + spectacle.getLieu());
-        location.setStyle(date.getStyle());
+        Label price = new Label(AppTheme.formatPrice(spectacle.getPrix()));
+        price.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 15));
+        price.setStyle("-fx-text-fill: #0f766e; -fx-font-family: '" + AppTheme.FONT_FAMILY + "';");
 
-        Label price = new Label(String.format("Prix : %.2f €", spectacle.getPrix()));
-        price.setStyle(
-                "-fx-font-size: 14px; " +
-                        "-fx-font-weight: bold; " +
-                        "-fx-text-fill: #27ae60;" // couleur verte cohérente pour succès/prix
-        );
+        Label seats = new Label("Places disponibles : " + spectacle.getPlacesDisponibles());
+        seats.setStyle(
+                "-fx-background-color: #dbeafe;" +
+                "-fx-background-radius: 999;" +
+                "-fx-padding: 6 10;" +
+                "-fx-text-fill: #1d4ed8;" +
+                "-fx-font-family: '" + AppTheme.FONT_FAMILY + "';" +
+                "-fx-font-weight: bold;");
 
-        Button reserveBtn = new Button("Réserver");
-        reserveBtn.setStyle(
-                "-fx-background-color: #2980b9; " + // bleu primaire
-                        "-fx-text-fill: white; " +
-                        "-fx-font-size: 14px; " +
-                        "-fx-padding: 8 16; " +
-                        "-fx-background-radius: 8;");
-
-        if (spectacle.getPlacesDisponibles() <= 0) {
-            reserveBtn.setDisable(true);
-            reserveBtn.setText("Complet");
+        Button reserveButton = new Button(spectacle.getPlacesDisponibles() > 0 ? "Reserver" : "Complet");
+        if (spectacle.getPlacesDisponibles() > 0) {
+            AppTheme.stylePrimaryButton(reserveButton);
+        } else {
+            AppTheme.styleSecondaryButton(reserveButton);
+            reserveButton.setDisable(true);
         }
 
-        reserveBtn.setOnAction(e -> {
-            ReservationDialog dialog = new ReservationDialog(reservationController, username, spectacle);
-            dialog.showAndWait().ifPresent(success -> {
-                if (success) {
-                    loadSpectaclesFromDB();
-                    updateCards();
-                    detailArea.setText("Réservation réussie pour : " + spectacle.getNom());
-                }
-            });
-        });
+        reserveButton.setOnAction(event -> openReservationDialog(spectacle));
 
-        VBox card = new VBox(12, title, date, location, price, reserveBtn);
-        card.setPadding(new Insets(20));
-        card.setAlignment(Pos.TOP_LEFT);
-        card.setStyle(
-                "-fx-background-color: #ffffff; " +
-                        "-fx-border-color: #d1d8e0; " +
-                        "-fx-border-radius: 12; " +
-                        "-fx-background-radius: 12; " +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0, 0, 4);");
-        card.setPrefWidth(240);
-
-        card.setOnMouseClicked(e -> {
-            detailArea.setText(
-                    spectacle.getNom() + "\n" +
-                            "Date : " + spectacle.getDate() + "\n" +
-                            "Lieu : " + spectacle.getLieu() + "\n" +
-                            String.format("Prix : %.2f €\n\n", spectacle.getPrix()) +
-                            "Description : Spectacle à ne pas manquer !");
-        });
-
+        card.getChildren().addAll(title, date, location, price, seats, reserveButton);
+        card.setOnMouseClicked(event -> showSpectacleDetails(spectacle));
         return card;
+    }
+
+    private void showSpectacleDetails(Spectacle spectacle) {
+        detailArea.setText(
+                spectacle.getNom() + "\n\n" +
+                "Date : " + spectacle.getDate() + "\n" +
+                "Lieu : " + spectacle.getLieu() + "\n" +
+                "Prix : " + AppTheme.formatPrice(spectacle.getPrix()) + "\n" +
+                "Places disponibles : " + spectacle.getPlacesDisponibles() + "\n\n" +
+                "La disponibilite et les compteurs sont mis a jour juste apres une reservation ou une annulation.");
+    }
+
+    private void openReservationDialog(Spectacle spectacle) {
+        ReservationDialog dialog = new ReservationDialog(reservationController, username, spectacle);
+        dialog.showAndWait().ifPresent(success -> {
+            if (success) {
+                detailArea.setText(
+                        "Reservation confirmee pour " + spectacle.getNom() + ".\n" +
+                        "Les billets ont ete generes et les compteurs ont ete rafraichis.");
+                notifyDataChanged();
+            }
+        });
+    }
+
+    private void notifyDataChanged() {
+        if (onDataChanged != null) {
+            onDataChanged.run();
+        } else {
+            refreshData();
+        }
     }
 
     public VBox getView() {

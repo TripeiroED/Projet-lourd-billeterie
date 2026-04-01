@@ -1,206 +1,185 @@
 package billeterie.view;
 
-import java.io.InputStream;
-
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+
+import java.io.InputStream;
 
 public class UserHome {
+    private final BorderPane mainLayout = new BorderPane();
+    private final VBox menuBox = new VBox(12);
 
-    private UserHomePage userHomePage;
-    private String username;
-    private App app;
+    private final UserHomePage userHomePage;
+    private final UserDashboard userDashboard;
+    private final UserReservations userReservationsView;
 
-    private BorderPane mainLayout = new BorderPane();
-
-    private VBox menuBox = new VBox();
-
-    private UserDashboard userDashboard;
-
-    private Button currentSelectedButton = null;
+    private Button currentSelectedButton;
 
     public UserHome(App app, String username) {
-        this.app = app;
-        this.username = username;
+        Runnable refreshCallback = this::refreshUserData;
 
-        // Header avec logo et texte d'accueil
-        HBox headerBox = new HBox(15);
-        headerBox.setPadding(new Insets(15, 30, 15, 30));
-        headerBox.setStyle(
-                "-fx-background-color: #f9f9f9;" + // même gris clair que dans UserDashboard
-                        "-fx-border-color: #d1d8e0;" + // bordure légère gris clair, cohérent
-                        "-fx-border-width: 0 0 1 0;" +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0, 0, 1);");
-        headerBox.setAlignment(Pos.CENTER_LEFT);
+        this.userHomePage = new UserHomePage(app, username, refreshCallback);
+        this.userDashboard = new UserDashboard(app, username, refreshCallback);
+        this.userReservationsView = new UserReservations(app, username, null, refreshCallback);
 
-        // Logo
+        AppTheme.styleShell(mainLayout);
+        mainLayout.setTop(createHeader(app, username));
+        mainLayout.setLeft(createSidebar(app, username));
+
+        showPage(userHomePage.getView());
+    }
+
+    private HBox createHeader(App app, String username) {
+        HBox header = new HBox(16);
+        header.setPadding(new Insets(18, 28, 18, 28));
+        header.setAlignment(Pos.CENTER_LEFT);
+        header.setStyle(
+                "-fx-background-color: white;" +
+                "-fx-border-color: #e2e8f0;" +
+                "-fx-border-width: 0 0 1 0;");
+
         ImageView logoView = createLogoImageView();
 
-        // Label d'accueil
-        Label lblWelcome = new Label("Bienvenue sur votre espace Billetterie, " + username + " !");
-        lblWelcome.setFont(Font.font("Segoe UI", 22));
-        lblWelcome.setStyle("-fx-text-fill: #2c3e50; -fx-font-weight: 600;"); // bleu foncé cohérent
+        VBox titleBox = new VBox(2);
+        Label appName = new Label("BILLETTERIE");
+        appName.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 20));
+        appName.setStyle(AppTheme.TITLE_TEXT_STYLE);
+
+        Label subtitle = AppTheme.mutedLabel("Espace utilisateur de " + username);
+        titleBox.getChildren().addAll(appName, subtitle);
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
-        headerBox.getChildren().addAll(logoView, lblWelcome, spacer);
-        mainLayout.setTop(headerBox);
+        Button refreshButton = new Button("Rafraichir");
+        AppTheme.styleSecondaryButton(refreshButton);
+        refreshButton.setOnAction(event -> refreshUserData());
 
-        // Menu latéral
-        menuBox.setPadding(new Insets(20));
-        menuBox.setSpacing(12);
-        menuBox.setStyle("-fx-background-color: #2c3e50;"); // bleu foncé pour le menu, même couleur que UserDashboard
-                                                            // btn sélectionné
-        menuBox.setPrefWidth(220);
+        Button logoutButton = new Button("Deconnexion");
+        AppTheme.styleDangerButton(logoutButton);
+        logoutButton.setOnAction(event -> app.showLoginScreen());
 
-        Button btnAccueil = createMenuButton("Accueil");
-        Button btnSpectacles = createMenuButton("Spectacles");
-        Button btnReservations = createMenuButton("Mes Réservations");
-        Button btnProfil = createMenuButton("Profil");
-        Button btnLogout = createMenuButton("Déconnexion");
+        header.getChildren().addAll(logoView, titleBox, spacer, refreshButton, logoutButton);
+        return header;
+    }
 
-        menuBox.getChildren().addAll(btnAccueil, btnSpectacles, btnReservations, btnProfil, new Separator(), btnLogout);
-        mainLayout.setLeft(menuBox);
+    private VBox createSidebar(App app, String username) {
+        menuBox.setPadding(new Insets(24));
+        menuBox.setPrefWidth(230);
+        menuBox.setStyle(AppTheme.NAV_STYLE);
 
-        // Initialisation des pages
-        userDashboard = new UserDashboard(app, username);
-        userHomePage = new UserHomePage(app, username);
+        Button homeButton = createMenuButton("Accueil");
+        Button spectaclesButton = createMenuButton("Spectacles");
+        Button reservationsButton = createMenuButton("Mes reservations");
+        Button profileButton = createMenuButton("Profil");
 
-        setCenterContent(userHomePage.getView());
-        setSelectedButton(btnAccueil);
-
-        // Actions menu
-        btnAccueil.setOnAction(e -> {
-            setCenterContent(userHomePage.getView());
-            setSelectedButton(btnAccueil);
+        homeButton.setOnAction(event -> {
+            showPage(userHomePage.getView());
+            setSelectedButton(homeButton);
         });
 
-        btnSpectacles.setOnAction(e -> {
-            setCenterContent(userDashboard.getView());
-            setSelectedButton(btnSpectacles);
+        spectaclesButton.setOnAction(event -> {
+            showPage(userDashboard.getView());
+            setSelectedButton(spectaclesButton);
         });
 
-        btnReservations.setOnAction(e -> {
-            UserReservations reservationsView = new UserReservations(app, username,null);
-            setCenterContent(reservationsView.getView());
-            setSelectedButton(btnReservations);
+        reservationsButton.setOnAction(event -> {
+            showPage(userReservationsView.getView());
+            setSelectedButton(reservationsButton);
         });
 
-        btnProfil.setOnAction(e -> {
+        profileButton.setOnAction(event -> {
             UserProfile profileView = new UserProfile(app, username, () -> {
-                setCenterContent(userHomePage.getView());
-                setSelectedButton(btnAccueil);
+                refreshUserData();
+                showPage(userHomePage.getView());
+                setSelectedButton(homeButton);
             });
-            setCenterContent(profileView.getView());
-            setSelectedButton(btnProfil);
+            showPage(profileView.getView());
+            setSelectedButton(profileButton);
         });
 
-        btnLogout.setOnAction(e -> app.showLoginScreen());
+        menuBox.getChildren().addAll(homeButton, spectaclesButton, reservationsButton, profileButton, new Separator());
+        setSelectedButton(homeButton);
+        return menuBox;
     }
 
     private ImageView createLogoImageView() {
-        InputStream logoStream = getClass().getResourceAsStream("/resources/logo.png");
+        InputStream logoStream = AppResources.openStream("logo.png");
         if (logoStream == null) {
-            java.io.File file = new java.io.File("resources/logo.png");
-            if (file.exists()) {
-                try {
-                    logoStream = new java.io.FileInputStream(file);
-                } catch (java.io.FileNotFoundException ex) {
-                    System.err.println("Logo non trouvé : " + ex.getMessage());
-                    return new ImageView();
-                }
-            } else {
-                System.err.println("Logo non trouvé à /resources/logo.png et resources/logo.png");
-                return new ImageView();
-            }
+            return new ImageView();
         }
-        Image logoImage = new Image(logoStream);
-        ImageView imageView = new ImageView(logoImage);
-        imageView.setFitWidth(80);
-        imageView.setFitHeight(80);
+
+        ImageView imageView = new ImageView(new Image(logoStream));
+        imageView.setFitWidth(54);
+        imageView.setFitHeight(54);
         imageView.setPreserveRatio(true);
         return imageView;
     }
 
-    private void setCenterContent(javafx.scene.Node node) {
-        ScrollPane scroll = new ScrollPane(node);
-        scroll.setFitToWidth(true);
-        scroll.setFitToHeight(true);
-        scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scroll.setPannable(true);
-        scroll.setStyle("-fx-background-color: transparent;");
-
-        if (node instanceof Region) {
-            ((Region) node).setStyle(
-                    "-fx-background-color: #f9f9f9; " +
-                            "-fx-padding: 20; " +
-                            "-fx-border-radius: 10; " +
-                            "-fx-background-radius: 10;");
-        }
-
-        mainLayout.setCenter(scroll);
-        BorderPane.setMargin(scroll, new Insets(20));
-    }
-
     private Button createMenuButton(String text) {
-        Button btn = new Button(text);
-        btn.setMaxWidth(Double.MAX_VALUE);
-        btn.setFont(Font.font("Segoe UI", 15));
-        btn.setStyle(
-                "-fx-background-color: transparent; " +
-                        "-fx-text-fill: white; " +
-                        "-fx-padding: 12 20; " +
-                        "-fx-alignment: center-left; " +
+        Button button = new Button(text);
+        button.setMaxWidth(Double.MAX_VALUE);
+        AppTheme.styleNavButton(button, false);
+
+        button.setOnMouseEntered(event -> {
+            if (button != currentSelectedButton) {
+                button.setStyle(
+                        "-fx-background-color: rgba(255,255,255,0.08);" +
+                        "-fx-text-fill: white;" +
+                        "-fx-background-radius: 12;" +
+                        "-fx-padding: 12 18;" +
+                        "-fx-font-family: '" + AppTheme.FONT_FAMILY + "';" +
+                        "-fx-font-weight: bold;" +
+                        "-fx-alignment: center-left;" +
                         "-fx-cursor: hand;");
-
-        btn.setOnMouseEntered(e -> {
-            if (btn != currentSelectedButton) {
-                btn.setStyle(
-                        "-fx-background-color: #34495e; " + // gris-bleu plus foncé au hover
-                                "-fx-text-fill: white; " +
-                                "-fx-padding: 12 20; " +
-                                "-fx-alignment: center-left; " +
-                                "-fx-cursor: hand;");
             }
         });
 
-        btn.setOnMouseExited(e -> {
-            if (btn != currentSelectedButton) {
-                btn.setStyle(
-                        "-fx-background-color: transparent; " +
-                                "-fx-text-fill: white; " +
-                                "-fx-padding: 12 20; " +
-                                "-fx-alignment: center-left; " +
-                                "-fx-cursor: hand;");
+        button.setOnMouseExited(event -> {
+            if (button != currentSelectedButton) {
+                AppTheme.styleNavButton(button, false);
             }
         });
 
-        return btn;
+        return button;
     }
 
-    private void setSelectedButton(Button btn) {
+    private void setSelectedButton(Button button) {
         if (currentSelectedButton != null) {
-            currentSelectedButton.setStyle(
-                    "-fx-background-color: transparent; " +
-                            "-fx-text-fill: white; " +
-                            "-fx-padding: 12 20; " +
-                            "-fx-alignment: center-left; " +
-                            "-fx-cursor: hand;");
+            AppTheme.styleNavButton(currentSelectedButton, false);
         }
-        btn.setStyle(
-                "-fx-background-color: #2980b9; " + // bleu primaire identique aux boutons dans UserDashboard
-                        "-fx-text-fill: white; " +
-                        "-fx-padding: 12 20; " +
-                        "-fx-alignment: center-left; " +
-                        "-fx-cursor: hand;");
-        currentSelectedButton = btn;
+        AppTheme.styleNavButton(button, true);
+        currentSelectedButton = button;
+    }
+
+    private void showPage(Region view) {
+        ScrollPane scrollPane = new ScrollPane(view);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+
+        mainLayout.setCenter(scrollPane);
+        BorderPane.setMargin(scrollPane, new Insets(22));
+    }
+
+    private void refreshUserData() {
+        userHomePage.refreshData();
+        userDashboard.refreshData();
+        userReservationsView.refreshData();
     }
 
     public BorderPane getView() {

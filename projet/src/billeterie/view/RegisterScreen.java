@@ -11,11 +11,7 @@ import java.time.LocalDate;
 public class RegisterScreen {
 
     private StackPane root;
-    private App app;
-
     public RegisterScreen(App app) {
-        this.app = app;
-
         VBox form = new VBox(14);
         form.setAlignment(Pos.CENTER);
         form.setPadding(new Insets(30));

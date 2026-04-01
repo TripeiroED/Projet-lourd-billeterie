@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+    <classpathentry kind="src" path="src"/>
+    <classpathentry kind="lib" path="lib/mysql-connector-j-9.5.0.jar"/>
+    <classpathentry kind="lib" path="lib/sqlite-jdbc-3.51.0.0.jar"/>
+    <classpathentry kind="lib" path="lib/core-3.5.3.jar"/>
+    <classpathentry kind="lib" path="lib/javase-3.5.3.jar"/>
+    <classpathentry kind="lib" path="C:/javafx/lib/javafx.base.jar"/>
+    <classpathentry kind="lib" path="C:/javafx/lib/javafx.controls.jar"/>
+    <classpathentry kind="lib" path="C:/javafx/lib/javafx.fxml.jar"/>
+    <classpathentry kind="lib" path="C:/javafx/lib/javafx.graphics.jar"/>
+    <classpathentry kind="lib" path="C:/javafx/lib/javafx.media.jar"/>
+    <classpathentry kind="lib" path="C:/javafx/lib/javafx.swing.jar"/>
+    <classpathentry kind="lib" path="C:/javafx/lib/javafx.web.jar"/>
+    <classpathentry kind="output" path="bin"/>
+</classpath>

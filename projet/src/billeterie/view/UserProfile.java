@@ -2,6 +2,25 @@ package billeterie.view;
 
 import billeterie.controller.UserController;
 import billeterie.model.UserProfileData;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
+import javafx.stage.FileChooser;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -9,45 +28,31 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.*;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.stage.FileChooser;
-
 public class UserProfile {
-
-    private VBox mainView = new VBox(30);
-    private final UserController userController;
-    private String username;
-    private Runnable onBack;
-
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private String currentProfileImagePath = null;
 
-    // Labels affichage
-    private Label lblFullname = new Label();
-    private Label lblUsername = new Label();
-    private Label lblEmail = new Label();
-    private Label lblPhone = new Label();
-    private Label lblBirthdate = new Label();
-    private Label lblAddress = new Label();
-    private ImageView profileImageView = new ImageView();
+    private final VBox mainView = new VBox(22);
+    private final UserController userController;
+    private final String username;
+    private final Runnable onBack;
 
-    // Pour mode édition
-    private TextField tfFullname = new TextField();
-    private TextField tfEmail = new TextField();
-    private TextField tfPhone = new TextField();
-    private DatePicker dpBirthdate = new DatePicker();
-    private TextField tfAddress = new TextField();
+    private final VBox contentCard = AppTheme.createCardBox();
+    private final ImageView profileImageView = new ImageView();
 
-    private VBox infoBox = new VBox(18);
-    private HBox buttons = new HBox(25);
+    private final Label lblFullname = new Label();
+    private final Label lblUsername = new Label();
+    private final Label lblEmail = new Label();
+    private final Label lblPhone = new Label();
+    private final Label lblBirthdate = new Label();
+    private final Label lblAddress = new Label();
+
+    private final TextField tfFullname = new TextField();
+    private final TextField tfEmail = new TextField();
+    private final TextField tfPhone = new TextField();
+    private final DatePicker dpBirthdate = new DatePicker();
+    private final TextField tfAddress = new TextField();
+
+    private final HBox buttonsBar = new HBox(12);
 
     private Button btnChangeImage;
     private Button btnEdit;
@@ -55,251 +60,291 @@ public class UserProfile {
     private Button btnSave;
     private Button btnCancel;
 
-    private boolean editMode = false;
+    private String currentProfileImagePath;
+    private boolean editMode;
 
     public UserProfile(App app, String username, Runnable onBack) {
         this.userController = app.getUserController();
         this.username = username;
         this.onBack = onBack;
 
-        mainView.setPadding(new Insets(40));
-        mainView.setStyle("-fx-background-color: #f0f2f5;");
-        mainView.setMaxWidth(700);
-        mainView.setAlignment(Pos.TOP_CENTER);
+        mainView.setPadding(new Insets(30));
+        mainView.setMaxWidth(980);
+        AppTheme.stylePage(mainView);
 
-        Label title = new Label("Mon Profil");
-        title.setFont(Font.font("Segoe UI", FontWeight.BOLD, 32));
-        title.setTextFill(Color.web("#34495e"));
-        mainView.getChildren().add(title);
+        configureImageView();
+        configureInputs();
+        configureButtons();
 
-        setupUI();
+        mainView.getChildren().addAll(createHeroCard(), contentCard, buttonsBar);
         loadUserInfo();
     }
 
-    private void setupUI() {
-        infoBox.setPadding(new Insets(25));
-        infoBox.setStyle(
-                "-fx-background-color: white; " +
-                        "-fx-border-radius: 14; " +
-                        "-fx-background-radius: 14; " +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 10, 0, 0, 4);");
-        infoBox.setMaxWidth(650);
+    private VBox createHeroCard() {
+        VBox hero = AppTheme.createCardBox();
+        hero.setSpacing(8);
 
-        profileImageView.setFitWidth(140);
-        profileImageView.setFitHeight(140);
+        Label title = AppTheme.pageTitle("Mon profil");
+        Label subtitle = AppTheme.mutedLabel(
+                "Retrouve tes informations personnelles et mets-les a jour facilement.");
+
+        hero.getChildren().addAll(title, subtitle);
+        return hero;
+    }
+
+    private void configureImageView() {
+        profileImageView.setFitWidth(156);
+        profileImageView.setFitHeight(156);
         profileImageView.setPreserveRatio(false);
         profileImageView.setSmooth(true);
-        profileImageView.setClip(new javafx.scene.shape.Circle(70, 70, 70));
+        profileImageView.setClip(new Circle(78, 78, 78));
         profileImageView.setStyle(
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 0, 1);");
+                "-fx-effect: dropshadow(gaussian, rgba(15,23,42,0.18), 14, 0, 0, 4);" +
+                "-fx-background-color: white;");
+    }
 
-        // Labels style
-        lblFullname.setFont(Font.font("Segoe UI", FontWeight.BOLD, 24));
-        lblFullname.setTextFill(Color.web("#2c3e50"));
+    private void configureInputs() {
+        AppTheme.styleField(tfFullname);
+        AppTheme.styleField(tfEmail);
+        AppTheme.styleField(tfPhone);
+        AppTheme.styleField(tfAddress);
 
-        Label[] labels = { lblUsername, lblEmail, lblPhone, lblBirthdate, lblAddress };
-        for (Label lbl : labels) {
-            lbl.setFont(Font.font("Segoe UI", 16));
-            lbl.setTextFill(Color.web("#555"));
-        }
+        tfFullname.setPromptText("Nom complet");
+        tfEmail.setPromptText("Email");
+        tfPhone.setPromptText("Telephone");
+        tfAddress.setPromptText("Adresse");
+        dpBirthdate.setPromptText("Date de naissance");
+        dpBirthdate.setStyle(AppTheme.FIELD_STYLE);
+        dpBirthdate.setMaxWidth(Double.MAX_VALUE);
+    }
 
-        btnChangeImage = new Button("\uD83D\uDDBC  Changer l'image");
-        btnChangeImage.setStyle(buttonStyle());
-        btnChangeImage.setOnMouseEntered(e -> btnChangeImage.setStyle(buttonHoverStyle()));
-        btnChangeImage.setOnMouseExited(e -> btnChangeImage.setStyle(buttonStyle()));
-        btnChangeImage.setOnAction(e -> changeProfileImage());
+    private void configureButtons() {
+        btnChangeImage = new Button("Changer la photo");
+        AppTheme.styleSecondaryButton(btnChangeImage);
+        btnChangeImage.setOnAction(event -> changeProfileImage());
 
-        // Boutons bas
-        btnEdit = new Button("Modifier mes infos");
-        btnEdit.setStyle(buttonStyle());
-        btnEdit.setOnMouseEntered(e -> btnEdit.setStyle(buttonHoverStyle()));
-        btnEdit.setOnMouseExited(e -> btnEdit.setStyle(buttonStyle()));
-        btnEdit.setOnAction(e -> switchToEditMode());
+        btnEdit = new Button("Modifier");
+        AppTheme.stylePrimaryButton(btnEdit);
+        btnEdit.setOnAction(event -> switchToEditMode());
 
-        btnBack = new Button("Retour à l'accueil");
-        btnBack.setStyle(buttonStyle());
-        btnBack.setOnMouseEntered(e -> btnBack.setStyle(buttonHoverStyle()));
-        btnBack.setOnMouseExited(e -> btnBack.setStyle(buttonStyle()));
-        btnBack.setOnAction(e -> {
-            if (onBack != null)
+        btnBack = new Button("Retour");
+        AppTheme.styleSecondaryButton(btnBack);
+        btnBack.setOnAction(event -> {
+            if (onBack != null) {
                 onBack.run();
+            }
         });
 
         btnSave = new Button("Enregistrer");
-        btnSave.setStyle(buttonStyle());
-        btnSave.setOnMouseEntered(e -> btnSave.setStyle(buttonHoverStyle()));
-        btnSave.setOnMouseExited(e -> btnSave.setStyle(buttonStyle()));
-        btnSave.setOnAction(e -> saveChanges());
+        AppTheme.stylePrimaryButton(btnSave);
+        btnSave.setOnAction(event -> saveChanges());
 
         btnCancel = new Button("Annuler");
-        btnCancel.setStyle(buttonStyle());
-        btnCancel.setOnMouseEntered(e -> btnCancel.setStyle(buttonHoverStyle()));
-        btnCancel.setOnMouseExited(e -> btnCancel.setStyle(buttonStyle()));
-        btnCancel.setOnAction(e -> cancelEdit());
+        AppTheme.styleSecondaryButton(btnCancel);
+        btnCancel.setOnAction(event -> cancelEdit());
 
-        buttons.setAlignment(Pos.CENTER);
-        buttons.setPadding(new Insets(20, 0, 0, 0));
-        buttons.getChildren().addAll(btnEdit, btnBack);
-
-        mainView.getChildren().addAll(infoBox, buttons);
+        buttonsBar.setAlignment(Pos.CENTER_RIGHT);
     }
 
     private void loadUserInfo() {
-        infoBox.getChildren().clear();
+        contentCard.getChildren().clear();
 
         try {
             UserProfileData profile = userController.findProfileByUsername(username);
 
-            if (profile != null) {
-                lblFullname.setText(profile.getFullname() != null ? profile.getFullname() : "Nom non renseigné");
-                lblUsername.setText("Nom d'utilisateur : " + username);
-                lblEmail.setText("Email : " + (profile.getEmail() != null ? profile.getEmail() : "non renseigné"));
-                lblPhone.setText("Téléphone : " + (profile.getPhone() != null ? profile.getPhone() : "non renseigné"));
-                lblBirthdate.setText("Date de naissance : "
-                        + (profile.getBirthdate() != null ? LocalDate.parse(profile.getBirthdate()).format(DATE_FORMAT)
-                                : "non renseignée"));
-                lblAddress.setText(
-                        "Adresse : " + (profile.getAddress() != null ? profile.getAddress() : "non renseignée"));
-
-                String profileImagePath = profile.getProfileImagePath();
-                if (profileImagePath != null && !profileImagePath.trim().isEmpty()) {
-                    try {
-                        Image profileImage = new Image(profileImagePath, true);
-                        profileImageView.setImage(profileImage);
-                        currentProfileImagePath = profileImagePath;
-                    } catch (Exception ex) {
-                        System.err.println("Erreur chargement image profil : " + ex.getMessage());
-                        setDefaultProfileImage(profileImageView);
-                    }
-                } else {
-                    setDefaultProfileImage(profileImageView);
-                }
-            } else {
-                lblFullname.setText("Utilisateur non trouvé");
+            if (profile == null) {
+                lblFullname.setText("Utilisateur introuvable");
                 setDefaultProfileImage(profileImageView);
+            } else {
+                lblFullname.setText(displayValue(profile.getFullname(), "Nom non renseigne"));
+                lblUsername.setText(username);
+                lblEmail.setText(displayValue(profile.getEmail(), "Non renseigne"));
+                lblPhone.setText(displayValue(profile.getPhone(), "Non renseigne"));
+                lblBirthdate.setText(formatBirthdate(profile.getBirthdate()));
+                lblAddress.setText(displayValue(profile.getAddress(), "Non renseignee"));
+                loadProfileImage(profile.getProfileImagePath());
             }
         } catch (SQLException e) {
-            lblFullname.setText("Erreur lors du chargement des données");
-            e.printStackTrace();
+            lblFullname.setText("Erreur de chargement");
+            lblUsername.setText(username);
+            lblEmail.setText("Impossible de charger l'email");
+            lblPhone.setText("Impossible de charger le telephone");
+            lblBirthdate.setText("Impossible de charger la date");
+            lblAddress.setText("Impossible de charger l'adresse");
             setDefaultProfileImage(profileImageView);
         }
 
-        HBox profileBox = new HBox(30);
-        profileBox.setAlignment(Pos.CENTER_LEFT);
+        HBox layout = new HBox(28, createIdentityPanel(), createDisplayInfoPanel());
+        layout.setAlignment(Pos.TOP_LEFT);
+        HBox.setHgrow(layout.getChildren().get(1), Priority.ALWAYS);
 
-        VBox infoTexts = new VBox(12);
-        infoTexts.getChildren().addAll(lblFullname, lblUsername, lblEmail, lblPhone, lblBirthdate, lblAddress,
-                btnChangeImage);
-
-        profileBox.getChildren().addAll(profileImageView, infoTexts);
-
-        infoBox.getChildren().add(profileBox);
-
-        // Mode affichage => boutons Edit + Back
-        buttons.getChildren().clear();
-        buttons.getChildren().addAll(btnEdit, btnBack);
-
+        contentCard.getChildren().add(layout);
+        buttonsBar.getChildren().setAll(btnBack, btnEdit);
         editMode = false;
+    }
+
+    private VBox createIdentityPanel() {
+        VBox panel = new VBox(14);
+        panel.setAlignment(Pos.TOP_CENTER);
+        panel.setPadding(new Insets(18));
+        panel.setPrefWidth(260);
+        AppTheme.styleSoftCard(panel);
+
+        Label badge = new Label("Compte utilisateur");
+        badge.setStyle(
+                "-fx-background-color: #dbeafe;" +
+                "-fx-text-fill: #1d4ed8;" +
+                "-fx-background-radius: 999;" +
+                "-fx-padding: 6 12;" +
+                "-fx-font-family: '" + AppTheme.FONT_FAMILY + "';" +
+                "-fx-font-weight: bold;");
+
+        Label fullname = new Label(lblFullname.getText());
+        fullname.setWrapText(true);
+        fullname.setTextFill(Color.web("#0f172a"));
+        fullname.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 24));
+        fullname.setAlignment(Pos.CENTER);
+
+        Label usernameValue = AppTheme.mutedLabel("@" + lblUsername.getText());
+        usernameValue.setFont(Font.font(AppTheme.FONT_FAMILY, 14));
+
+        panel.getChildren().addAll(profileImageView, badge, fullname, usernameValue, btnChangeImage);
+        return panel;
+    }
+
+    private VBox createDisplayInfoPanel() {
+        VBox panel = new VBox(16);
+        panel.setAlignment(Pos.TOP_LEFT);
+        panel.setPadding(new Insets(18));
+        AppTheme.styleSoftCard(panel);
+        HBox.setHgrow(panel, Priority.ALWAYS);
+
+        Label sectionTitle = AppTheme.sectionTitle("Informations personnelles");
+        Label helper = AppTheme.mutedLabel("Les informations ci-dessous sont visibles uniquement dans ton espace.");
+
+        panel.getChildren().addAll(
+                sectionTitle,
+                helper,
+                createInfoRow("Nom complet", lblFullname.getText()),
+                createInfoRow("Nom d'utilisateur", lblUsername.getText()),
+                createInfoRow("Email", lblEmail.getText()),
+                createInfoRow("Telephone", lblPhone.getText()),
+                createInfoRow("Date de naissance", lblBirthdate.getText()),
+                createInfoRow("Adresse", lblAddress.getText()));
+
+        return panel;
+    }
+
+    private VBox createInfoRow(String labelText, String valueText) {
+        VBox row = new VBox(4);
+        row.setPadding(new Insets(10, 0, 10, 0));
+        row.setStyle("-fx-border-color: transparent transparent #e2e8f0 transparent;");
+
+        Label label = new Label(labelText);
+        label.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 13));
+        label.setStyle("-fx-text-fill: #334155;");
+
+        Label value = new Label(valueText);
+        value.setWrapText(true);
+        value.setFont(Font.font(AppTheme.FONT_FAMILY, 15));
+        value.setStyle("-fx-text-fill: #0f172a;");
+
+        row.getChildren().addAll(label, value);
+        return row;
     }
 
     private void switchToEditMode() {
         editMode = true;
-        infoBox.getChildren().clear();
+        contentCard.getChildren().clear();
 
-        // Remplir champs avec valeurs actuelles
-        tfFullname.setText(lblFullname.getText().equals("Nom non renseigné") ? "" : lblFullname.getText());
-        tfEmail.setText(lblEmail.getText().replace("Email : ", "").equals("non renseigné") ? ""
-                : lblEmail.getText().replace("Email : ", ""));
-        tfPhone.setText(lblPhone.getText().replace("Téléphone : ", "").equals("non renseigné") ? ""
-                : lblPhone.getText().replace("Téléphone : ", ""));
-        tfAddress.setText(lblAddress.getText().replace("Adresse : ", "").equals("non renseignée") ? ""
-                : lblAddress.getText().replace("Adresse : ", ""));
+        tfFullname.setText(lblFullname.getText().equals("Nom non renseigne") ? "" : lblFullname.getText());
+        tfEmail.setText(lblEmail.getText().equals("Non renseigne") ? "" : lblEmail.getText());
+        tfPhone.setText(lblPhone.getText().equals("Non renseigne") ? "" : lblPhone.getText());
+        tfAddress.setText(lblAddress.getText().equals("Non renseignee") ? "" : lblAddress.getText());
+
         try {
-            String bdStr = lblBirthdate.getText().replace("Date de naissance : ", "");
-            LocalDate bd = bdStr.equals("non renseignée") ? null : LocalDate.parse(bdStr, DATE_FORMAT);
-            dpBirthdate.setValue(bd);
+            dpBirthdate.setValue(lblBirthdate.getText().equals("Non renseignee")
+                    ? null
+                    : LocalDate.parse(lblBirthdate.getText(), DATE_FORMAT));
         } catch (Exception e) {
             dpBirthdate.setValue(null);
         }
 
-        // Création layout formulaire
+        VBox identityPanel = createIdentityPanel();
+        VBox formPanel = createEditPanel();
+
+        HBox layout = new HBox(28, identityPanel, formPanel);
+        layout.setAlignment(Pos.TOP_LEFT);
+        HBox.setHgrow(formPanel, Priority.ALWAYS);
+
+        contentCard.getChildren().add(layout);
+        buttonsBar.getChildren().setAll(btnCancel, btnSave);
+    }
+
+    private VBox createEditPanel() {
+        VBox panel = new VBox(16);
+        panel.setPadding(new Insets(18));
+        AppTheme.styleSoftCard(panel);
+        HBox.setHgrow(panel, Priority.ALWAYS);
+
+        Label title = AppTheme.sectionTitle("Modifier mes informations");
+        Label helper = AppTheme.mutedLabel("Mets a jour les champs ci-dessous puis enregistre.");
+
         GridPane form = new GridPane();
-        form.setHgap(15);
-        form.setVgap(12);
-        form.setPadding(new Insets(0, 0, 20, 0));
+        form.setHgap(14);
+        form.setVgap(14);
 
-        form.add(new Label("Nom complet :"), 0, 0);
+        form.add(createFormLabel("Nom complet"), 0, 0);
         form.add(tfFullname, 1, 0);
-
-        form.add(new Label("Email :"), 0, 1);
+        form.add(createFormLabel("Email"), 0, 1);
         form.add(tfEmail, 1, 1);
-
-        form.add(new Label("Téléphone :"), 0, 2);
+        form.add(createFormLabel("Telephone"), 0, 2);
         form.add(tfPhone, 1, 2);
-
-        form.add(new Label("Date de naissance :"), 0, 3);
+        form.add(createFormLabel("Date de naissance"), 0, 3);
         form.add(dpBirthdate, 1, 3);
-
-        form.add(new Label("Adresse :"), 0, 4);
+        form.add(createFormLabel("Adresse"), 0, 4);
         form.add(tfAddress, 1, 4);
 
-        profileImageView.setFitWidth(140);
-        profileImageView.setFitHeight(140);
-        profileImageView.setPreserveRatio(false);
+        ColumnConstraintsHelper.setGrow(form);
 
-        HBox profileBox = new HBox(30);
-        profileBox.setAlignment(Pos.CENTER_LEFT);
+        panel.getChildren().addAll(title, helper, form);
+        return panel;
+    }
 
-        VBox leftBox = new VBox(12);
-        leftBox.getChildren().add(profileImageView);
-        leftBox.setAlignment(Pos.TOP_CENTER);
-
-        VBox rightBox = new VBox(12);
-        rightBox.getChildren().addAll(form, btnChangeImage);
-
-        profileBox.getChildren().addAll(leftBox, rightBox);
-
-        infoBox.getChildren().add(profileBox);
-
-        buttons.getChildren().clear();
-        buttons.getChildren().addAll(btnSave, btnCancel);
+    private Label createFormLabel(String text) {
+        Label label = new Label(text);
+        label.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 13));
+        label.setStyle("-fx-text-fill: #334155;");
+        return label;
     }
 
     private void saveChanges() {
-        // Validation minimale
-        String newFullname = tfFullname.getText().trim();
-        String newEmail = tfEmail.getText().trim();
-        String newPhone = tfPhone.getText().trim();
+        String newFullname = normalizeEmpty(tfFullname.getText());
+        String newEmail = normalizeEmpty(tfEmail.getText());
+        String newPhone = normalizeEmpty(tfPhone.getText());
         LocalDate newBirthdate = dpBirthdate.getValue();
-        String newAddress = tfAddress.getText().trim();
+        String newAddress = normalizeEmpty(tfAddress.getText());
 
         try {
             boolean success = userController.updateProfile(
                     username,
-                    newFullname.isEmpty() ? null : newFullname,
-                    newEmail.isEmpty() ? null : newEmail,
-                    newPhone.isEmpty() ? null : newPhone,
+                    newFullname,
+                    newEmail,
+                    newPhone,
                     newBirthdate,
-                    newAddress.isEmpty() ? null : newAddress);
+                    newAddress);
 
             if (success) {
                 if (currentProfileImagePath != null) {
                     userController.updateProfileImage(username, currentProfileImagePath);
                 }
-                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Profil mis à jour avec succès !");
-                alert.showAndWait();
+                new Alert(Alert.AlertType.INFORMATION, "Profil mis a jour avec succes.").showAndWait();
+                loadUserInfo();
             } else {
-                Alert alert = new Alert(Alert.AlertType.ERROR, "Erreur lors de la mise à jour.");
-                alert.showAndWait();
+                new Alert(Alert.AlertType.ERROR, "La mise a jour a echoue.").showAndWait();
             }
-
-            // Recharge affichage normal
-            loadUserInfo();
-
         } catch (SQLException e) {
-            e.printStackTrace();
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Erreur lors de la mise à jour : " + e.getMessage());
-            alert.showAndWait();
+            new Alert(Alert.AlertType.ERROR, "Erreur lors de la mise a jour : " + e.getMessage()).showAndWait();
         }
     }
 
@@ -310,67 +355,89 @@ public class UserProfile {
     private void changeProfileImage() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Choisir une image de profil");
-        fileChooser.getExtensionFilters().addAll(
+        fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("Images", "*.png", "*.jpg", "*.jpeg", "*.gif"));
+
         File selectedFile = fileChooser.showOpenDialog(mainView.getScene().getWindow());
-        if (selectedFile != null) {
+        if (selectedFile == null) {
+            return;
+        }
+
+        try {
+            Image newImage = new Image(new FileInputStream(selectedFile));
+            profileImageView.setImage(newImage);
+            currentProfileImagePath = selectedFile.toURI().toString();
+
+            if (!editMode) {
+                userController.updateProfileImage(username, currentProfileImagePath);
+            }
+        } catch (Exception e) {
+            new Alert(Alert.AlertType.ERROR, "Erreur lors du chargement de l'image : " + e.getMessage()).showAndWait();
+        }
+    }
+
+    private void loadProfileImage(String profileImagePath) {
+        if (profileImagePath != null && !profileImagePath.isBlank()) {
             try {
-                Image newImage = new Image(new FileInputStream(selectedFile));
-                profileImageView.setImage(newImage);
-                currentProfileImagePath = selectedFile.toURI().toString();
-
-                if (!editMode) {
-                    try {
-                        userController.updateProfileImage(username, currentProfileImagePath);
-                    } catch (SQLException e) {
-                        Alert alert = new Alert(Alert.AlertType.ERROR,
-                                "Erreur lors de la mise à jour de l'image : " + e.getMessage());
-                        alert.showAndWait();
-                    }
-                }
-
-            } catch (Exception ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR,
-                        "Erreur lors du chargement de l'image : " + ex.getMessage());
-                alert.showAndWait();
+                profileImageView.setImage(new Image(profileImagePath, true));
+                currentProfileImagePath = profileImagePath;
+                return;
+            } catch (Exception e) {
+                System.err.println("Erreur chargement image profil : " + e.getMessage());
             }
         }
+
+        currentProfileImagePath = null;
+        setDefaultProfileImage(profileImageView);
     }
 
     private void setDefaultProfileImage(ImageView imageView) {
-        InputStream is = getClass().getResourceAsStream("/resources/default_images.jpg");
-        if (is == null) {
-            java.io.File file = new java.io.File("resources/default_images.jpg");
-            if (file.exists()) {
-                try {
-                    is = new java.io.FileInputStream(file);
-                } catch (java.io.FileNotFoundException ex) {
-                    System.err.println("Image par défaut non trouvée : " + ex.getMessage());
-                    imageView.setImage(null);
-                    return;
-                }
-            }
-        }
-        if (is != null) {
-            Image defaultImage = new Image(is);
-            imageView.setImage(defaultImage);
-        } else {
-            System.err.println("Image par défaut non trouvée : vérifie le chemin !");
+        InputStream stream = AppResources.openStream("default_images.jpg");
+        if (stream == null) {
             imageView.setImage(null);
+            return;
+        }
+
+        imageView.setImage(new Image(stream));
+    }
+
+    private String formatBirthdate(String birthdate) {
+        if (birthdate == null || birthdate.isBlank()) {
+            return "Non renseignee";
+        }
+
+        try {
+            return LocalDate.parse(birthdate).format(DATE_FORMAT);
+        } catch (Exception e) {
+            return birthdate;
         }
     }
 
-    private String buttonStyle() {
-        return "-fx-background-color: #3498db; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 8; " +
-                "-fx-font-size: 15px; -fx-font-weight: bold;";
+    private String displayValue(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 
-    private String buttonHoverStyle() {
-        return "-fx-background-color: #2980b9; -fx-text-fill: white; -fx-padding: 10 20; -fx-background-radius: 8; " +
-                "-fx-font-size: 15px; -fx-font-weight: bold;";
+    private String normalizeEmpty(String value) {
+        String trimmed = value == null ? "" : value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public VBox getView() {
         return mainView;
+    }
+
+    private static final class ColumnConstraintsHelper {
+        private ColumnConstraintsHelper() {
+        }
+
+        private static void setGrow(GridPane form) {
+            javafx.scene.layout.ColumnConstraints left = new javafx.scene.layout.ColumnConstraints();
+            left.setMinWidth(150);
+
+            javafx.scene.layout.ColumnConstraints right = new javafx.scene.layout.ColumnConstraints();
+            right.setHgrow(Priority.ALWAYS);
+
+            form.getColumnConstraints().setAll(left, right);
+        }
     }
 }

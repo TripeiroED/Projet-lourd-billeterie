@@ -1,7 +1,6 @@
 package billeterie.view;
 
 import billeterie.model.User;
-import billeterie.controller.UserController;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -12,11 +11,7 @@ import java.sql.SQLException;
 public class LoginScreen {
 
     private StackPane root;
-    private App app;
-
     public LoginScreen(App app) {
-        this.app = app;
-
         /* =================== TITRE =================== */
         Label logo = new Label("🎟️ Billetterie");
         logo.setStyle(

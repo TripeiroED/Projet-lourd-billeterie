@@ -170,7 +170,7 @@ public class UserDAO {
     public List<User> findAll() throws SQLException {
         List<User> users = new ArrayList<>();
 
-        String sql = "SELECT username, role FROM users";
+        String sql = "SELECT username, role, fullname, email FROM users ORDER BY role DESC, username ASC";
 
         try (Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
@@ -178,7 +178,9 @@ public class UserDAO {
             while (rs.next()) {
                 String username = rs.getString("username");
                 String role = rs.getString("role");
-                users.add(new User(username, role));
+                String fullname = rs.getString("fullname");
+                String email = rs.getString("email");
+                users.add(new User(username, role, fullname, email));
             }
         }
 

@@ -1,19 +1,13 @@
 {
     "java.project.referencedLibraries": [
-    "c:\\xampp\\htdocs\\Billeterie\\lib\\mysql-connector-j-9.5.0.jar",
-    "c:\\javafx\\lib\\javafx.base.jar",
-    "c:\\javafx\\lib\\javafx.controls.jar",
-    "c:\\javafx\\lib\\javafx.fxml.jar",
-    "c:\\javafx\\lib\\javafx.graphics.jar",
-    "c:\\javafx\\lib\\javafx.media.jar",
-    "c:\\javafx\\lib\\javafx.swing.jar",
-    "c:\\javafx\\lib\\javafx.web.jar",
-    "c:\\javafx\\lib\\javafx-swt.jar"
-],
-"java.project.sourcePaths": [
-    "projet\\src"
-],
-"java.debug.settings.onBuildFailureProceed": true,
-"commentTranslate.hover.enabled": false
-
+        "projet/lib/**/*.jar",
+        "C:/javafx/lib/*.jar"
+    ],
+    "java.project.sourcePaths": [
+        "projet/src"
+    ],
+    "java.project.outputPath": "projet/bin",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.debug.settings.onBuildFailureProceed": true,
+    "commentTranslate.hover.enabled": false
 }
