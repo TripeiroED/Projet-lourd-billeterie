@@ -20,6 +20,10 @@ public class ReservationController {
         return reservationDAO.findByUsername(username);
     }
 
+    public List<Reservation> findForUser(String username) throws SQLException {
+        return reservationDAO.findForUser(username);
+    }
+
     public List<Billet> findBilletsByReservationId(int reservationId) throws SQLException {
         return reservationDAO.findBilletsByReservationId(reservationId);
     }

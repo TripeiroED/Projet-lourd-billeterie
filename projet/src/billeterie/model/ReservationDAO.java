@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,30 +17,71 @@ import java.util.List;
 public class ReservationDAO {
     private final Connection conn;
     private final BilletDAO billetDAO;
+    private Boolean reservationsHasUserIdColumn;
+    private Boolean reservationsHasUsernameColumn;
 
     public ReservationDAO(Connection conn) {
         this.conn = conn;
         this.billetDAO = new BilletDAO(conn);
     }
 
-    public List<Reservation> findByUsername(String username) throws SQLException {
+    public List<Reservation> findForUser(String username) throws SQLException {
         List<Reservation> list = new ArrayList<>();
-        String sql = "SELECT r.id, r.username, r.spectacle_id, s.nom AS spectacle_name, s.date, r.places_reservees "
-                + "FROM reservations r JOIN spectacles s ON r.spectacle_id = s.id WHERE r.username = ?";
+        boolean hasUserId = hasReservationUserIdColumn();
+        boolean hasUsername = hasReservationUsernameColumn();
+
+        if (!hasUserId && !hasUsername) {
+            throw new SQLException("La table reservations doit contenir user_id ou username.");
+        }
+
+        Integer userId = null;
+        if (hasUserId) {
+            userId = findUserIdByUsername(username);
+            if (userId == null && !hasUsername) {
+                return list;
+            }
+        }
+
+        String sql;
+        if (hasUserId && hasUsername && userId != null) {
+            sql = "SELECT r.id, COALESCE(r.user_id, ?) AS user_id, r.spectacle_id, s.nom AS spectacle_name, s.date, r.places_reservees "
+                    + "FROM reservations r JOIN spectacles s ON r.spectacle_id = s.id "
+                    + "WHERE r.user_id = ? OR (r.user_id IS NULL AND r.username = ?)";
+        } else if (hasUserId && userId != null) {
+            sql = "SELECT r.id, r.user_id, r.spectacle_id, s.nom AS spectacle_name, s.date, r.places_reservees "
+                    + "FROM reservations r JOIN spectacles s ON r.spectacle_id = s.id WHERE r.user_id = ?";
+        } else {
+            sql = "SELECT r.id, u.id AS user_id, r.spectacle_id, s.nom AS spectacle_name, s.date, r.places_reservees "
+                    + "FROM reservations r JOIN spectacles s ON r.spectacle_id = s.id "
+                    + "LEFT JOIN users u ON r.username = u.username WHERE r.username = ?";
+        }
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, username);
+            if (hasUserId && hasUsername && userId != null) {
+                stmt.setInt(1, userId);
+                stmt.setInt(2, userId);
+                stmt.setString(3, username);
+            } else if (hasUserId && userId != null) {
+                stmt.setInt(1, userId);
+            } else {
+                stmt.setString(1, username);
+            }
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    Reservation res = new Reservation(
+                    int reservationUserId = rs.getInt("user_id");
+                    if (rs.wasNull() && userId != null) {
+                        reservationUserId = userId;
+                    }
+
+                    Reservation reservation = new Reservation(
                             rs.getInt("id"),
-                            rs.getString("username"),
+                            reservationUserId,
                             rs.getInt("spectacle_id"),
                             rs.getString("spectacle_name"),
                             rs.getString("date"),
                             rs.getInt("places_reservees"));
-                    list.add(res);
+                    list.add(reservation);
                 }
             }
         }
@@ -47,10 +89,36 @@ public class ReservationDAO {
         return list;
     }
 
+    public List<Reservation> findByUsername(String username) throws SQLException {
+        return findForUser(username);
+    }
+
     public boolean reserverPlace(String username, int spectacleId, int placesDemandees) throws SQLException {
         String checkSql = "SELECT places_disponibles FROM spectacles WHERE id = ?";
-        String insertSql = "INSERT INTO reservations (username, spectacle_id, places_reservees) VALUES (?, ?, ?)";
         String updateSql = "UPDATE spectacles SET places_reservees = places_reservees + ?, places_disponibles = places_disponibles - ? WHERE id = ?";
+        boolean hasUserId = hasReservationUserIdColumn();
+        boolean hasUsername = hasReservationUsernameColumn();
+
+        if (!hasUserId && !hasUsername) {
+            throw new SQLException("La table reservations doit contenir user_id ou username.");
+        }
+
+        Integer userId = null;
+        if (hasUserId) {
+            userId = findUserIdByUsername(username);
+            if (userId == null) {
+                return false;
+            }
+        }
+
+        String insertSql;
+        if (hasUserId && hasUsername) {
+            insertSql = "INSERT INTO reservations (user_id, username, spectacle_id, places_reservees) VALUES (?, ?, ?, ?)";
+        } else if (hasUserId) {
+            insertSql = "INSERT INTO reservations (user_id, spectacle_id, places_reservees) VALUES (?, ?, ?)";
+        } else {
+            insertSql = "INSERT INTO reservations (username, spectacle_id, places_reservees) VALUES (?, ?, ?)";
+        }
 
         try {
             conn.setAutoCommit(false);
@@ -74,9 +142,20 @@ public class ReservationDAO {
 
             int reservationId;
             try (PreparedStatement insertStmt = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
-                insertStmt.setString(1, username);
-                insertStmt.setInt(2, spectacleId);
-                insertStmt.setInt(3, placesDemandees);
+                if (hasUserId && hasUsername) {
+                    insertStmt.setInt(1, userId);
+                    insertStmt.setString(2, username);
+                    insertStmt.setInt(3, spectacleId);
+                    insertStmt.setInt(4, placesDemandees);
+                } else if (hasUserId) {
+                    insertStmt.setInt(1, userId);
+                    insertStmt.setInt(2, spectacleId);
+                    insertStmt.setInt(3, placesDemandees);
+                } else {
+                    insertStmt.setString(1, username);
+                    insertStmt.setInt(2, spectacleId);
+                    insertStmt.setInt(3, placesDemandees);
+                }
                 insertStmt.executeUpdate();
 
                 try (ResultSet generatedKeys = insertStmt.getGeneratedKeys()) {
@@ -189,6 +268,50 @@ public class ReservationDAO {
             }
 
             billetDAO.createBillet(new Billet(reservationId, qrCodePath));
+        }
+    }
+
+    private Integer findUserIdByUsername(String username) throws SQLException {
+        String sql = "SELECT id FROM users WHERE username = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id");
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private boolean hasReservationUserIdColumn() throws SQLException {
+        if (reservationsHasUserIdColumn == null) {
+            reservationsHasUserIdColumn = hasColumn("reservations", "user_id");
+        }
+        return reservationsHasUserIdColumn;
+    }
+
+    private boolean hasReservationUsernameColumn() throws SQLException {
+        if (reservationsHasUsernameColumn == null) {
+            reservationsHasUsernameColumn = hasColumn("reservations", "username");
+        }
+        return reservationsHasUsernameColumn;
+    }
+
+    private boolean hasColumn(String tableName, String columnName) throws SQLException {
+        DatabaseMetaData metadata = conn.getMetaData();
+
+        try (ResultSet rs = metadata.getColumns(conn.getCatalog(), null, tableName, columnName)) {
+            if (rs.next()) {
+                return true;
+            }
+        }
+
+        try (ResultSet rs = metadata.getColumns(conn.getCatalog(), null, tableName.toUpperCase(), columnName.toUpperCase())) {
+            return rs.next();
         }
     }
 }

@@ -132,7 +132,7 @@ public class UserReservations {
         }
 
         try {
-            List<Reservation> reservations = reservationController.findByUsername(username);
+            List<Reservation> reservations = reservationController.findForUser(username);
             if (reservations.isEmpty()) {
                 container.getChildren().add(AppTheme.mutedLabel("Vous n'avez aucune reservation pour le moment."));
                 return;

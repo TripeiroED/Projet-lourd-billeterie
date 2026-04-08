@@ -123,7 +123,7 @@ public class UserHomePage {
         clearSection(reservationsSection);
 
         try {
-            List<Reservation> reservations = reservationController.findByUsername(username);
+            List<Reservation> reservations = reservationController.findForUser(username);
             if (reservations.isEmpty()) {
                 reservationsSection.getChildren().add(AppTheme.mutedLabel("Aucune reservation pour le moment."));
                 return;
@@ -258,7 +258,7 @@ public class UserHomePage {
 
     private int getReservationCount() {
         try {
-            return reservationController.findByUsername(username).size();
+            return reservationController.findForUser(username).size();
         } catch (SQLException e) {
             return 0;
         }
