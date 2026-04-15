@@ -1,37 +1,42 @@
 @echo off
 setlocal enabledelayedexpansion
 
-rem ---------- CONFIG ----------
 set "PROJECT_DIR=%~dp0"
 set "JAVAFX_LIB=C:\javafx\lib"
 set "LIB_DIR=%PROJECT_DIR%lib"
+set "SRC_DIR=%PROJECT_DIR%src\billeterie"
+set "BIN_DIR=%PROJECT_DIR%bin"
 
-rem ---------- CLEAN / BUILD ----------
-if exist "%PROJECT_DIR%bin" rmdir /s /q "%PROJECT_DIR%bin"
-mkdir "%PROJECT_DIR%bin"
+if exist "%BIN_DIR%" rmdir /s /q "%BIN_DIR%"
+mkdir "%BIN_DIR%"
 
-echo Recherche des fichiers sources...
+echo ======================
+echo Compilation...
+echo ======================
+
 set "SOURCES="
-for /r "%PROJECT_DIR%src\billeterie\model" %%f in (*.java) do set "SOURCES=!SOURCES! "%%f""
-for /r "%PROJECT_DIR%src\billeterie\controller" %%f in (*.java) do set "SOURCES=!SOURCES! "%%f""
-for /r "%PROJECT_DIR%src\billeterie\utils" %%f in (*.java) do set "SOURCES=!SOURCES! "%%f""
-for /r "%PROJECT_DIR%src\billeterie\view" %%f in (*.java) do set "SOURCES=!SOURCES! "%%f""
+for /r "%SRC_DIR%\model" %%f in (*.java) do call set SOURCES=%%SOURCES%% "%%f"
+for /r "%SRC_DIR%\controller" %%f in (*.java) do call set SOURCES=%%SOURCES%% "%%f"
+for /r "%SRC_DIR%\utils" %%f in (*.java) do call set SOURCES=%%SOURCES%% "%%f"
+for /r "%SRC_DIR%\view" %%f in (*.java) do call set SOURCES=%%SOURCES%% "%%f"
 
-echo Compilation des sources...
-javac --module-path "%JAVAFX_LIB%" --add-modules javafx.controls,javafx.fxml -cp "%LIB_DIR%\*" -d "%PROJECT_DIR%bin" %SOURCES%
+javac --release 21 --module-path "%JAVAFX_LIB%" --add-modules javafx.controls,javafx.fxml -cp "%LIB_DIR%\*" -d "%BIN_DIR%" %SOURCES%
+
 if errorlevel 1 (
-    echo Erreur de compilation. Verifie le chemin JavaFX, les jars dans lib et ta version de JDK.
+    echo ERREUR COMPILATION
     pause
-    endlocal
     exit /b 1
 )
 
-echo Lancement de l'application...
-java --module-path "%JAVAFX_LIB%" --add-modules javafx.controls,javafx.fxml -cp "%PROJECT_DIR%bin;%PROJECT_DIR%;%LIB_DIR%\*" billeterie.view.App
+echo ======================
+echo Lancement...
+echo ======================
+
+java --module-path "%JAVAFX_LIB%" --add-modules javafx.controls,javafx.fxml -cp "%BIN_DIR%;%LIB_DIR%\*" billeterie.view.App
+
 if errorlevel 1 (
-    echo Erreur d'execution. Verifie les jars dans "%LIB_DIR%".
+    echo ERREUR EXECUTION
     pause
-    endlocal
     exit /b 1
 )
 

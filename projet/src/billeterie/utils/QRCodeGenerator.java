@@ -15,10 +15,18 @@ public class QRCodeGenerator {
             BitMatrix matrix = new MultiFormatWriter()
                     .encode(text, BarcodeFormat.QR_CODE, 200, 200);
 
-            Path path = new File(filePath).toPath();
+            // 🔥 CRÉER LE DOSSIER SI IL N'EXISTE PAS
+            File file = new File(filePath);
+            File parent = file.getParentFile();
+
+            if (parent != null && !parent.exists()) {
+                parent.mkdirs();
+            }
+
+            Path path = file.toPath();
             MatrixToImageWriter.writeToPath(matrix, "PNG", path);
 
-            return filePath;
+            return file.getAbsolutePath(); // ✅ chemin propre
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -149,8 +149,20 @@ public class UserHomePage {
         title.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 15));
         title.setStyle(AppTheme.TITLE_TEXT_STYLE);
 
+        String rawDate = reservation.getDate();
+
+        String formattedDate;
+
+        try {
+            formattedDate = java.time.LocalDate
+                    .parse(rawDate.substring(0, 10))
+                    .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        } catch (Exception e) {
+            formattedDate = rawDate; // fallback si format bizarre
+        }
+
         Label details = AppTheme.mutedLabel(
-                reservation.getDate() + " | " + reservation.getNombrePlaces() + " place(s)");
+                formattedDate + " | " + reservation.getNombrePlaces() + " place(s)");
         textBox.getChildren().addAll(title, details);
 
         Button cancelButton = new Button("Annuler");
@@ -192,7 +204,19 @@ public class UserHomePage {
         name.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 15));
         name.setStyle(AppTheme.TITLE_TEXT_STYLE);
 
-        Label info = AppTheme.mutedLabel(spectacle.getDate() + " | " + spectacle.getLieu());
+        String rawDate = spectacle.getDate();
+
+        String formattedDate;
+
+        try {
+            formattedDate = java.time.LocalDate
+                    .parse(rawDate.substring(0, 10))
+                    .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        } catch (Exception e) {
+            formattedDate = rawDate; // fallback si format différent
+        }
+
+        Label info = AppTheme.mutedLabel(formattedDate + " | " + spectacle.getLieu());
         Label seats = AppTheme.mutedLabel("Places dispo : " + spectacle.getPlacesDisponibles());
         textBox.getChildren().addAll(name, info, seats);
 

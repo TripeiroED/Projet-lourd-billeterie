@@ -231,4 +231,25 @@ public class UserDAO {
             return stmt.executeUpdate() == 1;
         }
     }
+
+    public User findById(int id) throws SQLException {
+        String sql = "SELECT username, role, fullname, email FROM users WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String username = rs.getString("username");
+                    String role = rs.getString("role");
+                    String fullname = rs.getString("fullname");
+                    String email = rs.getString("email");
+
+                    return new User(username, role, fullname, email);
+                }
+            }
+        }
+
+        return null;
+    }
 }

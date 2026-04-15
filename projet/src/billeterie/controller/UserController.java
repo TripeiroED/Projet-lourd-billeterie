@@ -49,4 +49,9 @@ public class UserController {
     public void updateProfileImage(String username, String imagePath) throws SQLException {
         userDAO.updateProfileImage(username, imagePath);
     }
+
+    public User findById(int id) throws SQLException {
+        return userDAO.findById(id);
+    }
+
 }

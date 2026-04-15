@@ -1,5 +1,4 @@
 package billeterie.view;
-
 import billeterie.controller.ReservationController;
 import billeterie.model.Billet;
 import billeterie.model.Reservation;
@@ -18,6 +17,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.text.FontWeight;
 
 import java.io.File;
@@ -162,7 +163,11 @@ public class UserReservations {
         spectacleName.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 18));
         spectacleName.setStyle(AppTheme.TITLE_TEXT_STYLE);
 
-        Label dateLabel = AppTheme.mutedLabel("Date : " + reservation.getDate());
+        Label dateLabel = AppTheme.mutedLabel(
+                "Date : " + java.time.LocalDate.parse(
+                        reservation.getDate().substring(0, 10))
+                        .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
         Label placesLabel = AppTheme.mutedLabel("Nombre de places : " + reservation.getNombrePlaces());
         detailsBox.getChildren().addAll(spectacleName, dateLabel, placesLabel);
 
@@ -221,20 +226,36 @@ public class UserReservations {
             VBox content = new VBox(10);
             content.setPadding(new Insets(15));
 
-            for (Billet billet : billets) {
-                VBox billetBox = new VBox(4);
+            for (int i = 0; i < billets.size(); i++) {
+                Billet billet = billets.get(i);
+                int numeroBillet = i + 1;
+                VBox billetBox = new VBox(8);
                 billetBox.setPadding(new Insets(12));
                 AppTheme.styleSoftCard(billetBox);
 
-                Label idLabel = new Label("Billet #" + billet.getId());
+                Label idLabel = new Label("Billet #" + numeroBillet);
                 idLabel.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 14));
                 idLabel.setStyle(AppTheme.TITLE_TEXT_STYLE);
 
                 Label statutLabel = AppTheme.mutedLabel("Statut : " + billet.getStatut());
-                Label qrLabel = AppTheme.mutedLabel("QR code : " + new File(billet.getQrCode()).getAbsolutePath());
-                qrLabel.setWrapText(true);
 
-                billetBox.getChildren().addAll(idLabel, statutLabel, qrLabel);
+                // 🔥 AJOUT IMAGE QR CODE
+                File file = new File(billet.getQrCode());
+
+                if (file.exists()) {
+                    ImageView qrImage = new ImageView(new Image(file.toURI().toString()));
+                    qrImage.setFitWidth(160);
+                    qrImage.setFitHeight(160);
+                    qrImage.setPreserveRatio(true);
+
+                    billetBox.getChildren().addAll(idLabel, statutLabel, qrImage);
+                } else {
+                    Label error = new Label("QR code introuvable ❌");
+                    error.setStyle("-fx-text-fill: red;");
+
+                    billetBox.getChildren().addAll(idLabel, statutLabel, error);
+                }
+
                 content.getChildren().add(billetBox);
             }
 

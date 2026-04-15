@@ -3,10 +3,15 @@ package billeterie.view;
 import billeterie.controller.SpectacleController;
 import billeterie.controller.UserController;
 import billeterie.model.Spectacle;
+import java.util.List;
 import billeterie.model.User;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.control.TextInputDialog;
+import billeterie.controller.ReservationController;
+import billeterie.model.Reservation;
+import billeterie.model.Billet;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -45,6 +50,22 @@ public class AdminDashboard {
     private static final String SECONDARY = "-fx-background-color:#e2e8f0;-fx-text-fill:#0f172a;-fx-background-radius:10;-fx-padding:10 18;-fx-font-family:'" + FONT + "';-fx-font-weight:bold;-fx-cursor:hand;";
     private static final String SUCCESS = "-fx-background-color:#0f766e;-fx-text-fill:white;-fx-background-radius:10;-fx-padding:10 18;-fx-font-family:'" + FONT + "';-fx-font-weight:bold;-fx-cursor:hand;";
     private static final String DANGER = "-fx-background-color:#dc2626;-fx-text-fill:white;-fx-background-radius:10;-fx-padding:10 18;-fx-font-family:'" + FONT + "';-fx-font-weight:bold;-fx-cursor:hand;";
+    private static final int PAGE_SIZE = 4;
+
+    private double scrollPos = 0;
+    private int userPage = 0;
+    private int spectaclePage = 0;
+    private int reservationPage = 0;
+    
+    private <T> List<T> paginate(List<T> list, int page, int size) {
+        int from = page * size;
+        int to = Math.min(from + size, list.size());
+
+        if (from > list.size())
+            return List.of();
+
+        return list.subList(from, to);
+    }
 
     private final App app;
     private final UserController userController;
@@ -52,18 +73,24 @@ public class AdminDashboard {
     private final BorderPane root = new BorderPane();
     private final ObservableList<User> users = FXCollections.observableArrayList();
     private final ObservableList<Spectacle> spectacles = FXCollections.observableArrayList();
+    private final ReservationController reservationController;
+    private final ObservableList<Reservation> reservations = FXCollections.observableArrayList();
 
     public AdminDashboard(App app) {
         this.app = app;
         this.userController = app.getUserController();
         this.spectacleController = app.getSpectacleController();
+        this.reservationController = app.getReservationController();
         root.setStyle("-fx-background-color:#f8fafc;");
         refreshData();
         root.setTop(createTopBar());
         root.setCenter(createContent());
         root.sceneProperty().addListener((obs, o, n) -> {
             if (n != null) {
-                Platform.runLater(root::requestFocus);
+                Platform.runLater(() -> {
+                    root.setFocusTraversable(true);
+                    root.requestFocus();
+                });
             }
         });
     }
@@ -99,10 +126,12 @@ public class AdminDashboard {
         page.getChildren().addAll(createHero(), createMetrics(), createBody());
 
         ScrollPane scroll = new ScrollPane(page);
+        scroll.setVvalue(scrollPos);
+        Platform.runLater(() -> scroll.setVvalue(scrollPos));
         scroll.setFitToWidth(true);
         scroll.setHbarPolicy(ScrollBarPolicy.NEVER);
         scroll.setPannable(false);
-        scroll.setFocusTraversable(false);
+        scroll.setFocusTraversable(true);
         scroll.setStyle("-fx-background:transparent;-fx-background-color:transparent;");
         scroll.viewportBoundsProperty().addListener((obs, o, n) -> page.setPrefWidth(Math.max(0, n.getWidth())));
         return scroll;
@@ -167,7 +196,10 @@ public class AdminDashboard {
 
     private HBox createBody() {
         HBox body = new HBox(22);
-        VBox left = new VBox(22, createUsersCard(), createSpectaclesCard());
+        VBox left = new VBox(22,
+                createUsersCard(),
+                createSpectaclesCard(),
+                createReservationsCard());
         VBox right = new VBox(22, createActionsCard(), createMonitoringCard());
         right.setPrefWidth(320);
         HBox.setHgrow(left, Priority.ALWAYS);
@@ -183,9 +215,13 @@ public class AdminDashboard {
             return box;
         }
         VBox list = new VBox(12);
-        for (User user : users) {
+        List<User> pageUsers = paginate(users, userPage, PAGE_SIZE);
+
+        for (User user : pageUsers) {
             list.getChildren().add(createUserRow(user));
         }
+
+        list.getChildren().add(paginationControls("USER"));
         box.getChildren().add(list);
         return box;
     }
@@ -236,9 +272,13 @@ public class AdminDashboard {
             return box;
         }
         VBox list = new VBox(12);
-        for (Spectacle spectacle : spectacles) {
+        List<Spectacle> pageSpectacles = paginate(spectacles, spectaclePage, PAGE_SIZE);
+
+        for (Spectacle spectacle : pageSpectacles) {
             list.getChildren().add(createSpectacleRow(spectacle));
         }
+
+        list.getChildren().add(paginationControls("SPECTACLE"));
         box.getChildren().add(list);
         return box;
     }
@@ -417,9 +457,19 @@ public class AdminDashboard {
     }
 
     private void rebuildContent() {
+        ScrollPane oldScroll = (ScrollPane) root.getCenter();
+        if (oldScroll != null) {
+            scrollPos = oldScroll.getVvalue();
+        }
+
         refreshData();
         root.setCenter(createContent());
-        Platform.runLater(root::requestFocus);
+
+        Platform.runLater(() -> {
+            ScrollPane sp = (ScrollPane) root.getCenter();
+            sp.setVvalue(scrollPos);
+            sp.requestFocus(); // ⭐ IMPORTANT
+        });
     }
 
     private void refreshData() {
@@ -432,6 +482,11 @@ public class AdminDashboard {
             spectacles.setAll(spectacleController.findAll());
         } catch (SQLException e) {
             spectacles.clear();
+        }
+        try {
+            reservations.setAll(reservationController.findAll());
+        } catch (SQLException e) {
+            reservations.clear();
         }
     }
 
@@ -697,5 +752,157 @@ public class AdminDashboard {
 
     private void styleField(TextField field) {
         field.setStyle(FIELD);
+    }
+
+    private VBox createReservationsCard() {
+        VBox box = cardBox();
+
+        box.getChildren().add(sectionHeader(
+                "Réservations",
+                "Gestion des réservations clients",
+                reservations.size() + " réservations"));
+
+        if (reservations.isEmpty()) {
+            box.getChildren().add(empty("Aucune réservation."));
+            return box;
+        }
+
+        VBox list = new VBox(12);
+
+        List<Reservation> pageReservations = paginate(reservations, reservationPage, PAGE_SIZE);
+
+        for (Reservation r : pageReservations) {
+            list.getChildren().add(createReservationRow(r));
+        }
+
+        list.getChildren().add(paginationControls("RESERVATION"));
+
+        box.getChildren().add(list);
+        return box;
+    }
+
+    private HBox createReservationRow(Reservation r) {
+
+        HBox row = new HBox(16);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setPadding(new Insets(16));
+        row.setStyle("-fx-background-color:white;-fx-background-radius:16;-fx-border-color:#e2e8f0;");
+
+        User userObj = null;
+        try {
+            userObj = userController.findById(r.getUserId());
+        } catch (SQLException e) {
+            userObj = null;
+        }
+
+        String email = (userObj != null) ? userObj.getEmail() : "Email inconnu";
+
+        VBox info = new VBox(6);
+
+        Label user = new Label("Email: " + email);
+        user.setStyle(TITLE);
+
+        Label details = new Label(
+                "Spectacle: " + r.getSpectacleName()
+                        + " | Places: " + r.getNombrePlaces()
+                        + " | Date: " + r.getDate());
+        details.setStyle(MUTED);
+
+        info.getChildren().addAll(user, details);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
+        Button cancel = btn("Annuler", DANGER);
+        cancel.setOnAction(e -> deleteReservation(r));
+
+        Button edit = btn("Modifier", SECONDARY);
+        edit.setOnAction(e -> editReservation(r));
+
+        row.getChildren().addAll(info, spacer, edit, cancel);
+
+        return row;
+    }
+
+    private void deleteReservation(Reservation r) {
+        if (!confirm("Annuler réservation", "Confirmer annulation ?"))
+            return;
+
+        try {
+            reservationController.annulerReservation(r.getId());
+            rebuildContent();
+            info("OK", "Réservation annulée");
+        } catch (SQLException e) {
+            info("Erreur", "Impossible d'annuler");
+        }
+    }
+
+    private HBox paginationControls(String type) {
+        HBox box = new HBox(10);
+        box.setAlignment(Pos.CENTER);
+
+        Button prev = btn("◀", SECONDARY);
+        Button next = btn("▶", SECONDARY);
+
+        prev.setOnAction(e -> {
+            switch (type) {
+                case "USER" -> {
+                    if (userPage > 0)
+                        userPage--;
+                }
+                case "SPECTACLE" -> {
+                    if (spectaclePage > 0)
+                        spectaclePage--;
+                }
+                case "RESERVATION" -> {
+                    if (reservationPage > 0)
+                        reservationPage--;
+                }
+            }
+            rebuildContent();
+        });
+
+        next.setOnAction(e -> {
+            switch (type) {
+                case "USER" -> userPage++;
+                case "SPECTACLE" -> spectaclePage++;
+                case "RESERVATION" -> reservationPage++;
+            }
+            rebuildContent();
+        });
+
+        box.getChildren().addAll(prev, next);
+        return box;
+    }
+
+    private void editReservation(Reservation r) {
+
+        TextInputDialog dialog = new TextInputDialog(String.valueOf(r.getNombrePlaces()));
+        dialog.setTitle("Modifier réservation");
+        dialog.setHeaderText("Modifier le nombre de places");
+        dialog.setContentText("Places :");
+
+        dialog.showAndWait().ifPresent(value -> {
+            try {
+                int newPlaces = Integer.parseInt(value);
+
+                if (newPlaces <= 0) {
+                    info("Erreur", "Nombre invalide");
+                    return;
+                }
+
+                // ⚠️ appel controller (à créer si pas encore fait)
+                reservationController.modifierReservation(r.getId(), newPlaces);
+
+                rebuildContent();
+                info("OK", "Réservation modifiée");
+
+            } catch (NumberFormatException e) {
+                info("Erreur", "Nombre invalide");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                info("Erreur", "Modification impossible: " + e.getMessage());
+            }
+        });
     }
 }

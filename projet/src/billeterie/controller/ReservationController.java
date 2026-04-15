@@ -39,4 +39,12 @@ public class ReservationController {
     public boolean ajouterReservation(String username, int spectacleId, int nbPlaces) throws SQLException {
         return reserverPlace(username, spectacleId, nbPlaces);
     }
+
+    public List<Reservation> findAll() throws SQLException {
+        return reservationDAO.findAll();
+    }
+
+    public void modifierReservation(int id, int nombrePlaces) throws SQLException {
+        reservationDAO.updateReservation(id, nombrePlaces);
+    }
 }

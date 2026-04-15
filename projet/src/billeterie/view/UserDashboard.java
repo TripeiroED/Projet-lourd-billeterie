@@ -217,7 +217,10 @@ public class UserDashboard {
         title.setFont(Font.font(AppTheme.FONT_FAMILY, FontWeight.BOLD, 18));
         title.setStyle(AppTheme.TITLE_TEXT_STYLE);
 
-        Label date = AppTheme.mutedLabel("Date : " + spectacle.getDate());
+        Label date = AppTheme.mutedLabel(
+                "Date : " + java.time.LocalDate.parse(
+                        spectacle.getDate().substring(0, 10))
+                        .format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         Label location = AppTheme.mutedLabel("Lieu : " + spectacle.getLieu());
 
         Label price = new Label(AppTheme.formatPrice(spectacle.getPrix()));

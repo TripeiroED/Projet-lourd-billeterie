@@ -314,4 +314,119 @@ public class ReservationDAO {
             return rs.next();
         }
     }
+
+    public List<Reservation> findAll() throws SQLException {
+        List<Reservation> list = new ArrayList<>();
+
+        String sql = """
+                    SELECT r.id, r.user_id, r.spectacle_id, s.nom AS spectacle_name, s.date, r.places_reservees
+                    FROM reservations r
+                    JOIN spectacles s ON r.spectacle_id = s.id
+                """;
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql);
+                ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(new Reservation(
+                        rs.getInt("id"),
+                        rs.getInt("user_id"),
+                        rs.getInt("spectacle_id"),
+                        rs.getString("spectacle_name"),
+                        rs.getString("date"),
+                        rs.getInt("places_reservees")));
+            }
+        }
+
+        return list;
+    }
+
+    public void updateReservation(int id, int newPlaces) throws SQLException {
+
+        // 1. récupérer réservation existante
+        Reservation r = getReservationById(id);
+
+        if (r == null) {
+            throw new SQLException("Réservation introuvable");
+        }
+
+        int oldPlaces = r.getNombrePlaces();
+        int diff = newPlaces - oldPlaces;
+
+        // 2. update réservation
+        String sql = "UPDATE reservations SET places_reservees = ? WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, newPlaces);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        }
+
+        // 3. ajuster places spectacle
+        String updateSpectacle = "UPDATE spectacles SET " +
+                "places_reservees = places_reservees + ?, " +
+                "places_disponibles = places_disponibles - ? " +
+                "WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(updateSpectacle)) {
+            ps.setInt(1, diff);
+            ps.setInt(2, diff);
+            ps.setInt(3, r.getSpectacleId());
+            ps.executeUpdate();
+        }
+
+        // 4. recréer billets
+        billetDAO.deleteByReservationId(id);
+
+        String username = findUsernameByUserId(r.getUserId());
+
+        createBilletsPourReservation(
+                id,
+                r.getSpectacleId(),
+                username,
+                newPlaces);
+    }
+
+    public Reservation getReservationById(int id) throws SQLException {
+        String sql = """
+                    SELECT r.id, r.user_id, r.spectacle_id, s.nom AS spectacle_name, s.date, r.places_reservees
+                    FROM reservations r
+                    JOIN spectacles s ON r.spectacle_id = s.id
+                    WHERE r.id = ?
+                """;
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Reservation(
+                            rs.getInt("id"),
+                            rs.getInt("user_id"),
+                            rs.getInt("spectacle_id"),
+                            rs.getString("spectacle_name"),
+                            rs.getString("date"),
+                            rs.getInt("places_reservees"));
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String findUsernameByUserId(int userId) throws SQLException {
+        String sql = "SELECT username FROM users WHERE id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("username");
+                }
+            }
+        }
+        return null;
+    }
+
 }

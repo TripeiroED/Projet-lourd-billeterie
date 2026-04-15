@@ -51,6 +51,8 @@ public class RegisterScreen {
         strengthBar.setPrefWidth(360);
 
         Label strengthLabel = new Label("Force du mot de passe");
+        Label hint = new Label("Min 10 caractères, 1 majuscule, 1 chiffre, 1 symbole");
+        hint.setStyle("-fx-text-fill: #888; -fx-font-size: 11px;");
         strengthLabel.setStyle("-fx-font-weight: bold;");
 
         passwordField.textProperty().addListener((obs, oldVal, newVal) -> {
@@ -152,6 +154,7 @@ public class RegisterScreen {
                 label("Date de naissance"), birthdatePicker,
                 label("Adresse"), addressField,
                 passwordBox,
+                hint,
                 strengthLabel,
                 strengthBar,
                 btnRegister,
