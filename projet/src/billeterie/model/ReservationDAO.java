@@ -343,48 +343,72 @@ public class ReservationDAO {
 
     public void updateReservation(int id, int newPlaces) throws SQLException {
 
-        // 1. récupérer réservation existante
-        Reservation r = getReservationById(id);
+        conn.setAutoCommit(false);
 
-        if (r == null) {
-            throw new SQLException("Réservation introuvable");
+        try {
+            // 1. récupérer réservation
+            Reservation r = getReservationById(id);
+
+            if (r == null) {
+                throw new SQLException("Réservation introuvable");
+            }
+
+            int oldPlaces = r.getNombrePlaces();
+            int diff = newPlaces - oldPlaces;
+
+            // 2. vérifier capacité spectacle si augmentation
+            if (diff > 0) {
+                String checkSql = "SELECT places_disponibles FROM spectacles WHERE id = ?";
+                try (PreparedStatement ps = conn.prepareStatement(checkSql)) {
+                    ps.setInt(1, r.getSpectacleId());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (!rs.next() || rs.getInt("places_disponibles") < diff) {
+                            throw new SQLException("Pas assez de places disponibles");
+                        }
+                    }
+                }
+            }
+
+            // 3. update réservation
+            String sql = "UPDATE reservations SET places_reservees = ? WHERE id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, newPlaces);
+                ps.setInt(2, id);
+                ps.executeUpdate();
+            }
+
+            // 4. update spectacle (SÉCURISÉ)
+            String updateSpectacle = "UPDATE spectacles SET " +
+                    "places_reservees = places_reservees + ?, " +
+                    "places_disponibles = places_disponibles - ? " +
+                    "WHERE id = ?";
+
+            try (PreparedStatement ps = conn.prepareStatement(updateSpectacle)) {
+                ps.setInt(1, diff);
+                ps.setInt(2, diff);
+                ps.setInt(3, r.getSpectacleId());
+                ps.executeUpdate();
+            }
+
+            // 5. billets
+            billetDAO.deleteByReservationId(id);
+
+            String username = findUsernameByUserId(r.getUserId());
+
+            createBilletsPourReservation(
+                    id,
+                    r.getSpectacleId(),
+                    username,
+                    newPlaces);
+
+            conn.commit();
+
+        } catch (SQLException e) {
+            conn.rollback();
+            throw e;
+        } finally {
+            conn.setAutoCommit(true);
         }
-
-        int oldPlaces = r.getNombrePlaces();
-        int diff = newPlaces - oldPlaces;
-
-        // 2. update réservation
-        String sql = "UPDATE reservations SET places_reservees = ? WHERE id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, newPlaces);
-            ps.setInt(2, id);
-            ps.executeUpdate();
-        }
-
-        // 3. ajuster places spectacle
-        String updateSpectacle = "UPDATE spectacles SET " +
-                "places_reservees = places_reservees + ?, " +
-                "places_disponibles = places_disponibles - ? " +
-                "WHERE id = ?";
-
-        try (PreparedStatement ps = conn.prepareStatement(updateSpectacle)) {
-            ps.setInt(1, diff);
-            ps.setInt(2, diff);
-            ps.setInt(3, r.getSpectacleId());
-            ps.executeUpdate();
-        }
-
-        // 4. recréer billets
-        billetDAO.deleteByReservationId(id);
-
-        String username = findUsernameByUserId(r.getUserId());
-
-        createBilletsPourReservation(
-                id,
-                r.getSpectacleId(),
-                username,
-                newPlaces);
     }
 
     public Reservation getReservationById(int id) throws SQLException {
