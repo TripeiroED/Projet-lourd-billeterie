@@ -47,6 +47,32 @@ public class RegisterScreen {
         // Regroupement Mot de passe + Confirmer mot de passe côte à côte
         HBox passwordBox = new HBox(15);
         PasswordField passwordField = createPasswordField("Mot de passe");
+        ProgressBar strengthBar = new ProgressBar(0);
+        strengthBar.setPrefWidth(360);
+
+        Label strengthLabel = new Label("Force du mot de passe");
+        strengthLabel.setStyle("-fx-font-weight: bold;");
+
+        passwordField.textProperty().addListener((obs, oldVal, newVal) -> {
+
+            double strength = calculatePasswordStrength(newVal);
+            strengthBar.setProgress(strength);
+
+            if (strength < 0.4) {
+                strengthLabel.setText("Faible");
+                strengthLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+                strengthBar.setStyle("-fx-accent: red;");
+            } else if (strength < 0.7) {
+                strengthLabel.setText("Moyen");
+                strengthLabel.setStyle("-fx-text-fill: orange; -fx-font-weight: bold;");
+                strengthBar.setStyle("-fx-accent: orange;");
+            } else {
+                strengthLabel.setText("Fort");
+                strengthLabel.setStyle("-fx-text-fill: green; -fx-font-weight: bold;");
+                strengthBar.setStyle("-fx-accent: green;");
+            }
+        });
+
         passwordField.setMaxWidth(190);
         PasswordField confirmPasswordField = createPasswordField("Confirmer mot de passe");
         confirmPasswordField.setMaxWidth(190);
@@ -88,6 +114,11 @@ public class RegisterScreen {
                 return;
             }
 
+            if (!isValidPassword(password)) {
+                message.setText("Mot de passe trop faible (10 caractères, majuscule, chiffre, symbole)");
+                return;
+            }
+
             try {
                 boolean success = app.getUserController().register(
                         username,
@@ -121,6 +152,8 @@ public class RegisterScreen {
                 label("Date de naissance"), birthdatePicker,
                 label("Adresse"), addressField,
                 passwordBox,
+                strengthLabel,
+                strengthBar,
                 btnRegister,
                 btnBack,
                 message);
@@ -225,6 +258,27 @@ public class RegisterScreen {
                         "-fx-background-color: #eeeeee;" +
                         "-fx-text-fill: #0f2027;" +
                         "-fx-cursor: hand;"));
+    }
+
+    private boolean isValidPassword(String password) {
+        return password.matches("^(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).{10,}$");
+    }
+
+    private double calculatePasswordStrength(String password) {
+        double score = 0;
+
+        if (password.length() >= 10)
+            score += 0.25;
+        if (password.matches(".*[A-Z].*"))
+            score += 0.2;
+        if (password.matches(".*[a-z].*"))
+            score += 0.15;
+        if (password.matches(".*\\d.*"))
+            score += 0.2;
+        if (password.matches(".*[@$!%*?&].*"))
+            score += 0.2;
+
+        return Math.min(score, 1.0);
     }
 
     public StackPane getView() {
